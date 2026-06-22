@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir -p \"C:/学习/课程设计/docs/superpowers/specs\")",
+      "Bash(mkdir -p \"C:/学习/课程设计/.claude\")",
+      "Bash(git init *)",
+      "Bash(git config *)",
+      "Bash(pip install *)",
+      "Bash(PYTHONUTF8=1 pip install *)",
+      "Bash(PYTHONUTF8=1 python -m pip install -r requirements.txt)",
+      "Bash(PYTHONUTF8=1 python -m pip install --default-timeout=120 torch torchvision ultralytics opencv-python albumentations scikit-learn onnx onnxruntime \"onnx-simplifier>=0.3.0\" tensorboard tqdm PyYAML)",
+      "Bash(python *)",
+      "Bash(pip show *)",
+      "Bash(nvidia-smi)",
+      "Bash(pip list *)",
+      "Bash(pip uninstall *)",
+      "WebFetch(domain:mirrors.tuna.tsinghua.edu.cn)",
+      "Bash(pip index *)",
+      "Bash(pip download *)",
+      "Bash(git add *)",
+      "Bash(git commit *)"
+    ]
+  }
+}

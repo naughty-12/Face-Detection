@@ -1,0 +1,26 @@
+# 核心框架
+torch>=1.10.0
+torchvision>=0.11.0
+ultralytics>=8.0.0
+numpy>=1.19.0
+opencv-python>=4.5.0
+
+# 数据增强与处理
+albumentations>=1.0.0
+pandas>=1.2.0
+matplotlib>=3.3.0
+
+# 评估与指标
+scikit-learn>=0.24.0
+
+# 模型导出与加速
+onnx>=1.10.0
+onnxruntime>=1.10.0
+onnx-simplifier>=0.3.0
+
+# 训练监控
+tensorboard>=2.5.0
+
+# 工具
+tqdm>=4.60.0
+PyYAML>=5.4.0
