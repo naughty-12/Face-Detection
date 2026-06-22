@@ -15,15 +15,13 @@ ANNO_DIR = os.path.join(DATA_DIR, "annotations")
 
 
 def prepare_data_yaml():
-    """Generate ultralytics data.yaml from WIDER Face file lists"""
+    """Generate ultralytics data.yaml"""
     data_yaml_path = os.path.join(ANNO_DIR, "widerface.yaml")
-    train_list = os.path.join(ANNO_DIR, "train_list.txt")
-    val_list = os.path.join(ANNO_DIR, "val_list.txt")
 
     yaml_content = f"""# WIDER Face dataset config for YOLOv8
-path: {DATA_DIR}
-train: {train_list}
-val: {val_list}
+path: {os.path.join(DATA_DIR, 'raw')}
+train: WIDER_train
+val: WIDER_val
 
 names:
   0: face
