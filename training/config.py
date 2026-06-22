@@ -11,6 +11,8 @@ def load_config():
         return yaml.safe_load(f)
 
 
+# NOTE: This function is informational only — ultralytics uses warmup_epochs (not steps)
+# when calling model.train(). It is kept here for summary/reporting purposes.
 def compute_warmup_steps(epochs, dataset_size, batch_size):
     steps_per_epoch = dataset_size // batch_size
     warmup_steps = int(epochs * steps_per_epoch * 0.05)

@@ -3,7 +3,7 @@
 # GPU: RTX 3060 Laptop 6GB → batch_size=8
 
 # 模型选型
-model_name: "yolov8n-face.pt"
+model_name: "yolov8n.pt"      # ultralytics pretrained weights, fine-tuned on face data
 input_size: [640, 640]
 
 # 网络结构
@@ -12,16 +12,11 @@ architecture:
   neck: "default"
   head: "default"
 
-# 损失函数权重
-loss_weights:
-  box_loss: 7.5
-  cls_loss: 0.5
-  dfl_loss: 1.5
-
 # 训练超参数
 training:
   epochs: 100
   batch_size: 8
+  accumulation_steps: 2
   imgsz: 640
   optimizer: "AdamW"
   lr0: 0.001
