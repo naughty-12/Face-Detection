@@ -2,6 +2,7 @@
 import os
 import sys
 import json
+import numpy as np
 from ultralytics import YOLO
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(__file__))
@@ -60,9 +61,34 @@ def generate_predictions(model_path, output_dir):
             if results[0].boxes is not None:
                 boxes = results[0].boxes.xyxy.cpu().numpy()
                 scores = results[0].boxes.conf.cpu().numpy()
+                f.write(f"{img_name}\n")
+                f.write(f"{len(boxes)}\n")
                 for box, score in zip(boxes, scores):
                     x1, y1, x2, y2 = box
-                    f.write(f"{img_name}\n{score:.6f}\n{x1:.1f} {y1:.1f} {x2-x1:.1f} {y2-y1:.1f}\n")
+                    w = x2 - x1
+                    h = y2 - y1
+                    f.write(f"{x1:.1f} {y1:.1f} {w:.1f} {h:.1f} {score:.6f}\n")
+            else:
+                f.write(f"{img_name}\n0\n")
+
+
+def plot_pr_curve(model_path, save_path=None):
+    """Generate P-R curve using ultralytics built-in plotting"""
+    model = YOLO(model_path)
+    data_yaml = os.path.join(ANNO_DIR, "widerface.yaml")
+
+    results = model.val(data=data_yaml, split="val", batch=8, imgsz=640, plots=True)
+
+    if save_path:
+        import shutil
+        import glob
+        run_dirs = sorted(glob.glob(os.path.join(PROJECT_ROOT, "runs", "detect", "val*")),
+                          key=os.path.getmtime, reverse=True)
+        if run_dirs:
+            pr_src = os.path.join(run_dirs[0], "PR_curve.png")
+            if os.path.exists(pr_src):
+                shutil.copy(pr_src, save_path)
+                print(f"P-R curve saved to {save_path}")
 
 
 def save_metrics(metrics, output_path):
@@ -90,6 +116,10 @@ def main():
     v2_metrics = evaluate_widerface(v2_path)
     save_metrics(v2_metrics, os.path.join(REPORTS_DIR, "metrics_v2.json"))
 
+    print("\nGenerating P-R curves ...")
+    plot_pr_curve(v1_path, save_path=os.path.join(REPORTS_DIR, "pr_curve_v1.png"))
+    plot_pr_curve(v2_path, save_path=os.path.join(REPORTS_DIR, "pr_curve_v2.png"))
+
     print("\n" + "=" * 60)
     print("Evaluation Summary")
     print("=" * 60)
@@ -102,6 +132,47 @@ def main():
 
     comparison = {"v1": v1_metrics, "v2": v2_metrics}
     save_metrics(comparison, os.path.join(REPORTS_DIR, "comparison.json"))
+
+    print("\nGenerating improvement chart ...")
+    plot_improvement_chart(v1_metrics, v2_metrics, REPORTS_DIR)
+
+
+def plot_improvement_chart(v1_metrics, v2_metrics, output_dir):
+    """Generate v1→v2 improvement bar chart"""
+    import matplotlib.pyplot as plt
+
+    metrics_keys = ["easy_mAP", "medium_mAP", "hard_mAP"]
+    v1_vals = [v1_metrics.get(k, 0) for k in metrics_keys]
+    v2_vals = [v2_metrics.get(k, 0) for k in metrics_keys]
+
+    x = np.arange(len(metrics_keys))
+    width = 0.35
+
+    fig, ax = plt.subplots(figsize=(10, 6))
+    bars1 = ax.bar(x - width/2, v1_vals, width, label='v1 Baseline', color='steelblue')
+    bars2 = ax.bar(x + width/2, v2_vals, width, label='v2 Fine-tuned', color='darkorange')
+
+    ax.set_ylabel('mAP')
+    ax.set_title('v1 vs v2 Performance Comparison')
+    ax.set_xticks(x)
+    ax.set_xticklabels(metrics_keys)
+    ax.legend()
+
+    # Add value labels on bars
+    for bar in bars1:
+        height = bar.get_height()
+        ax.annotate(f'{height:.3f}', xy=(bar.get_x() + bar.get_width()/2, height),
+                    xytext=(0, 3), textcoords="offset points", ha='center', va='bottom', fontsize=9)
+    for bar in bars2:
+        height = bar.get_height()
+        ax.annotate(f'{height:.3f}', xy=(bar.get_x() + bar.get_width()/2, height),
+                    xytext=(0, 3), textcoords="offset points", ha='center', va='bottom', fontsize=9)
+
+    plt.tight_layout()
+    chart_path = os.path.join(output_dir, "improvement_chart.png")
+    plt.savefig(chart_path, dpi=150)
+    plt.close()
+    print(f"Improvement chart saved to {chart_path}")
 
 
 if __name__ == "__main__":

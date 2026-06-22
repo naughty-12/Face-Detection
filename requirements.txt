@@ -12,6 +12,8 @@ matplotlib>=3.3.0
 
 # 评估与指标
 scikit-learn>=0.24.0
+# WIDER Face evaluation
+widerface-evaluate>=0.1.0
 
 # 模型导出与加速
 onnx>=1.10.0
