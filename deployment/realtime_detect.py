@@ -49,9 +49,16 @@ def parse_onnx_output(output, original_shape, ratio_pad, conf_threshold=0.25):
     boxes_xyxy[:, 3] = boxes_xywh[:, 1] + boxes_xywh[:, 3]/2
     boxes_xyxy = scale_boxes(boxes_xyxy, original_shape, ratio_pad)
 
-    indices = cv2.dnn.NMSBoxes(boxes_xyxy.tolist(), scores.tolist(), 0.25, 0.45)
+    boxes_list = boxes_xyxy.tolist()
+    scores_list = scores.tolist()
+    if len(boxes_list) == 0:
+        return np.zeros((0,4)), np.zeros(0)
+    indices = cv2.dnn.NMSBoxes(boxes_list, scores_list, 0.25, 0.45)
     if len(indices) > 0:
-        keep = indices.flatten()
+        try:
+            keep = indices.flatten()
+        except AttributeError:
+            keep = np.array(indices).flatten()
         return boxes_xyxy[keep], scores[keep]
     return np.zeros((0,4)), np.zeros(0)
 

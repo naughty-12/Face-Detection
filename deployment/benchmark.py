@@ -3,6 +3,7 @@ import os
 import sys
 import time
 import numpy as np
+import torch
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(__file__))
 sys.path.insert(0, PROJECT_ROOT)
@@ -12,24 +13,27 @@ DEPLOY_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
 def benchmark_pytorch(model_path, num_warmup=50, num_test=200):
-    import torch
     from ultralytics import YOLO
     model = YOLO(model_path)
     model.model.eval()
-    dummy = torch.randn(1, 3, 640, 640).cuda()
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    dummy = torch.randn(1, 3, 640, 640).to(device)
 
     for _ in range(num_warmup):
         with torch.no_grad():
             _ = model.model(dummy)
-    torch.cuda.synchronize()
+    if device.type == "cuda":
+        torch.cuda.synchronize()
 
     times = []
     for _ in range(num_test):
-        torch.cuda.synchronize()
+        if device.type == "cuda":
+            torch.cuda.synchronize()
         t0 = time.perf_counter()
         with torch.no_grad():
             _ = model.model(dummy)
-        torch.cuda.synchronize()
+        if device.type == "cuda":
+            torch.cuda.synchronize()
         t1 = time.perf_counter()
         times.append((t1 - t0) * 1000)
 
@@ -65,6 +69,7 @@ def benchmark_onnx(onnx_path, num_warmup=50, num_test=200):
 def main():
     print("=" * 60)
     print("Performance Benchmark")
+    print(f"Device: {'CUDA' if torch.cuda.is_available() else 'CPU'}")
     print("=" * 60)
 
     v2_pt = os.path.join(CHECKPOINT_DIR, "best_model_v2.pt")
