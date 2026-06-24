@@ -1,0 +1,3 @@
+- [项目进度](face-detection-progress.md) — 2026-06-23 状态快照，待下载数据集
+- [架构设计](face-detection-design.md) — YOLOv8n-face + 外六内一模式
+- [GPU约束](face-detection-gpu-constraint.md) — RTX 3060 Laptop 6GB，batch=8

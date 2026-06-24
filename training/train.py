@@ -2,6 +2,31 @@
 import os
 import sys
 import shutil
+
+# ── cv2.imread Unicode patch for Windows ──────────────────────────────────
+# cv2.imread fails on paths containing non-ASCII characters (e.g. Chinese).
+# Replace it with a wrapper that falls back to imdecode when imread fails.
+import cv2
+import numpy as np
+
+_ORIG_IMREAD = cv2.imread
+
+def _imread_unicode(path, flags=cv2.IMREAD_COLOR):
+    """Unicode-safe cv2.imread — uses imdecode fallback for non-ASCII paths."""
+    result = _ORIG_IMREAD(path, flags)
+    if result is not None:
+        return result
+    # Fallback: read bytes and decode
+    try:
+        with open(path, "rb") as f:
+            data = np.frombuffer(f.read(), np.uint8)
+        return cv2.imdecode(data, flags)
+    except Exception:
+        return None
+
+cv2.imread = _imread_unicode
+# ──────────────────────────────────────────────────────────────────────────
+
 from ultralytics import YOLO
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(__file__))
@@ -15,20 +40,25 @@ ANNO_DIR = os.path.join(DATA_DIR, "annotations")
 
 
 def prepare_data_yaml():
-    """Generate ultralytics data.yaml"""
+    """Generate ultralytics data.yaml with UTF-8 encoding and relative path"""
     data_yaml_path = os.path.join(ANNO_DIR, "widerface.yaml")
 
+    # Use path relative to PROJECT_ROOT (CWD when running training),
+    # NOT relative to the YAML file — ultralytics resolves from CWD
+    rel_path = os.path.relpath(os.path.join(DATA_DIR, "raw"), PROJECT_ROOT)
+
+    # TODO: change val back to WIDER_val when WIDER_val.zip is re-downloaded
     yaml_content = f"""# WIDER Face dataset config for YOLOv8
-path: {os.path.join(DATA_DIR, 'raw')}
+path: {rel_path}
 train: WIDER_train
-val: WIDER_val
+val: WIDER_train
 
 names:
   0: face
 
 nc: 1
 """
-    with open(data_yaml_path, "w") as f:
+    with open(data_yaml_path, "w", encoding="utf-8") as f:
         f.write(yaml_content)
     return data_yaml_path
 
@@ -68,6 +98,7 @@ def train_v1(config, data_yaml_path):
         exist_ok=True,
         pretrained=True,
         verbose=True,
+        val=False,  # validation disabled until WIDER_val is re-downloaded
     )
 
     os.makedirs(CHECKPOINT_DIR, exist_ok=True)

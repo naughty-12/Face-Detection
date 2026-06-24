@@ -19,6 +19,12 @@ def parse_wider_annotation(anno_file):
         num_faces = int(lines[i])
         i += 1
         boxes = []
+        # WIDER Face quirk: some entries have num_faces=0 but still
+        # include a dummy all-zero bbox line — skip it
+        if num_faces == 0 and i < len(lines):
+            parts = lines[i].split()
+            if all(int(v) == 0 for v in parts):
+                i += 1
         for _ in range(num_faces):
             if i >= len(lines):
                 break
@@ -47,7 +53,7 @@ def convert_split(split_name, anno_file, image_root):
     """Convert one split (train/val) to YOLO format"""
     import cv2
 
-    label_root = os.path.join(image_root, "labels")
+    label_root = os.path.join(os.path.dirname(image_root), "labels")
     os.makedirs(label_root, exist_ok=True)
 
     samples = parse_wider_annotation(anno_file)
@@ -55,13 +61,20 @@ def convert_split(split_name, anno_file, image_root):
     skipped = 0
 
     for img_name, boxes in samples:
-        img_path = os.path.join(image_root, img_name)
+        img_path = os.path.normpath(os.path.join(image_root, img_name))
         if not os.path.exists(img_path):
             skipped += 1
             continue
 
-        # Get image dimensions
-        h, w = cv2.imread(img_path).shape[:2]
+        # Get image dimensions (use imdecode to avoid cv2 Unicode path bug on Windows)
+        import numpy as np
+        with open(img_path, "rb") as f_img:
+            img_data = f_img.read()
+        img = cv2.imdecode(np.frombuffer(img_data, np.uint8), cv2.IMREAD_COLOR)
+        if img is None:
+            skipped += 1
+            continue
+        h, w = img.shape[:2]
 
         # Convert to YOLO
         yolo_lines = boxes_to_yolo(boxes, w, h)
