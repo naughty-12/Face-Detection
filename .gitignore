@@ -1,6 +1,25 @@
-training/checkpoints/*.pt
-_wheels/
+# Python
 __pycache__/
 *.pyc
-.DS_Store
+*.pyo
+_wheels/
+
+# Model weights (downloadable from ultralytics)
+*.pt
+
+# Dataset (large files, downloaded separately)
+data/raw/
+data/annotations/wider_face_split/
+
+# Training artifacts
+training/checkpoints/
+training/training_log.txt
 runs/
+
+# System
+.DS_Store
+.claude/settings.local.json
+
+# Reports
+*.doc
+*.docx
