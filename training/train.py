@@ -47,11 +47,10 @@ def prepare_data_yaml():
     # NOT relative to the YAML file — ultralytics resolves from CWD
     rel_path = os.path.relpath(os.path.join(DATA_DIR, "raw"), PROJECT_ROOT)
 
-    # TODO: change val back to WIDER_val when WIDER_val.zip is re-downloaded
     yaml_content = f"""# WIDER Face dataset config for YOLOv8
 path: {rel_path}
 train: WIDER_train
-val: WIDER_train
+val: WIDER_val
 
 names:
   0: face
