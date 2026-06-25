@@ -123,7 +123,7 @@ python deployment/realtime_detect.py --input 0 --half
 
 ### VTube Studio 人脸追踪
 
-运行前请在 VTube Studio 中开启插件 API。首次运行时，VTube Studio 会弹出插件授权请求，同意后脚本会缓存 token。VTube Studio 未启动或连接失败时，脚本不会退出，会保持摄像头/调试窗口运行，并每 10 秒自动重试连接。
+运行前请在 VTube Studio 中开启插件 API。首次运行时，VTube Studio 会弹出插件授权请求，同意后脚本会缓存 token。VTube Studio 未启动或连接失败时，脚本不会退出，会保持摄像头/调试窗口运行，并每 10 秒自动重试连接。连接成功后会读取 `InputParameterListRequest`，并按 VTS 返回的同名输入参数 `min/max` 裁剪注入值。
 
 ```bash
 # 默认连接 ws://127.0.0.1:8001，使用0号摄像头，默认启用FP16推理
@@ -149,6 +149,9 @@ python deployment/vtube_studio_bridge.py --input 0 --nohalf
 | `--vtsport` | `8001` | VTube Studio API port |
 | `--landmark-model` | `thirdparty/PFLD/weights/pfld_landmark.onnx` | PFLD 98 点关键点 ONNX 模型路径 |
 | `--no-landmarks` | 关闭 | 关闭调试窗口中的 PFLD 关键点绘制 |
+| `--show-landmark-indexes` | 关闭 | 在调试窗口绘制 PFLD 关键点编号，用于校准表情映射 |
+| `--head-pose-config` | `thirdparty/3DDFA_V2/configs/mb1_120x120.yml` | 3DDFA_V2 头部姿态配置路径 |
+| `--no-head-pose` | 关闭 | 关闭 `FaceAngleX/Y/Z` 估计 |
 | `--show` | 关闭 | 显示调试预览窗口 |
 | `--nohalf` | 关闭 | 关闭 bridge 默认启用的 FP16 推理 |
 | `--send-fps` | `30` | 向 VTube Studio 发送参数的最高频率 |
@@ -157,6 +160,7 @@ python deployment/vtube_studio_bridge.py --input 0 --nohalf
 | `--bbox-window` | `5` | 人脸框中值滤波窗口大小 |
 | `--hold-frames` | `3` | 检测短暂丢失时保持上一人脸框的帧数 |
 | `--expression-alpha` | `0.45` | 表情参数 EMA 平滑系数，越大响应越快 |
+| `--head-pose-alpha` | `0.35` | 头部角度 EMA 平滑系数，越大响应越快 |
 
 ### 性能测试
 

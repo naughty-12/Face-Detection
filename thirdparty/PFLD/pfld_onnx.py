@@ -109,9 +109,22 @@ class PFLDLandmarkDetector:
         return crop, (crop_x1, crop_y1), size
 
 
-def draw_landmarks(frame, landmarks, color=(0, 255, 0), radius=1):
+def draw_landmarks(frame, landmarks, color=(0, 255, 0), radius=1, show_indexes=False):
     if landmarks is None:
         return frame
-    for x, y in landmarks.astype(np.int32):
-        cv2.circle(frame, (int(x), int(y)), radius, color, -1)
+    for index, (x, y) in enumerate(landmarks.astype(np.int32)):
+        x = int(x)
+        y = int(y)
+        cv2.circle(frame, (x, y), radius, color, -1)
+        if show_indexes:
+            cv2.putText(
+                frame,
+                str(index),
+                (x + 2, y - 2),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.32,
+                (0, 0, 255),
+                1,
+                cv2.LINE_AA,
+            )
     return frame

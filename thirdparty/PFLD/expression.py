@@ -10,6 +10,7 @@ WFLW_IMAGE_LEFT_BROW = list(range(33, 42))
 WFLW_IMAGE_RIGHT_BROW = list(range(42, 51))
 WFLW_OUTER_MOUTH = list(range(76, 88))
 WFLW_INNER_MOUTH = list(range(88, 96))
+MOUTH_INNER_VERTICAL_PAIRS = ((90, 94), (89, 95), (91, 93))
 
 
 def clamp(value, min_value=0.0, max_value=1.0):
@@ -59,11 +60,12 @@ def estimate_expressions(landmarks):
     image_right_eye_open = normalize_eye_open(eye_open_ratio(image_right_eye))
 
     mouth_width = max(distance(mouth[0], mouth[6]), 1e-6)
-    mouth_open_ratio = (
-        distance(inner_mouth[1], inner_mouth[5])
-        + distance(inner_mouth[2], inner_mouth[4])
-    ) / (2.0 * mouth_width)
-    mouth_open = clamp((mouth_open_ratio - 0.03) / 0.32)
+    mouth_vertical = np.mean([
+        distance(points[upper], points[lower])
+        for upper, lower in MOUTH_INNER_VERTICAL_PAIRS
+    ])
+    mouth_open_ratio = mouth_vertical / mouth_width
+    mouth_open = clamp((mouth_open_ratio - 0.02) / 0.34)
 
     mouth_center_y = float(mean_point([mouth[0], mouth[6]])[1])
     corner_lift = ((mouth_center_y - float(mouth[0][1])) + (mouth_center_y - float(mouth[6][1]))) / 2.0

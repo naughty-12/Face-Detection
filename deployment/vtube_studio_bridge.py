@@ -11,6 +11,8 @@ from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT))
+THREEDDFA_ROOT = PROJECT_ROOT / "thirdparty" / "3DDFA_V2"
+sys.path.insert(0, str(THREEDDFA_ROOT))
 
 import cv2
 import numpy as np
@@ -18,12 +20,14 @@ import torch
 from ultralytics import YOLO
 from websocket import create_connection
 
+from head_pose import HeadPoseEstimator3DDFA, HeadPoseFilter
 from thirdparty.PFLD.expression import ExpressionFilter, estimate_expressions
 from thirdparty.PFLD.pfld_onnx import PFLDLandmarkDetector, draw_landmarks as draw_pfld_landmarks
 
 
 DEFAULT_MODEL = PROJECT_ROOT / "training" / "checkpoints" / "best_model_v2.onnx"
 DEFAULT_LANDMARK_MODEL = PROJECT_ROOT / "thirdparty" / "PFLD" / "weights" / "pfld_landmark.onnx"
+DEFAULT_HEAD_POSE_CONFIG = PROJECT_ROOT / "thirdparty" / "3DDFA_V2" / "configs" / "mb1_120x120.yml"
 PLUGIN_NAME = "Face Detection VTube Studio Bridge"
 PLUGIN_DEVELOPER = "Face-Detection Project"
 TOKEN_FILE = Path(os.getenv("APPDATA", Path.home())) / "FaceDetectionVTubeStudioBridge" / "vts_token.json"
@@ -41,6 +45,9 @@ class VTubeStudioClient:
         self.url = f"ws://{host}:{port}"
         self.timeout = timeout
         self.ws = None
+        self.input_parameters = {}
+        self.input_model_loaded = False
+        self.input_model_name = ""
 
     @property
     def connected(self):
@@ -94,19 +101,46 @@ class VTubeStudioClient:
         if not self._authenticate_with_token(token):
             raise RuntimeError("VTube Studio authentication failed after token approval.")
 
-    def inject_face_position(self, face_found, position=None, expressions=None):
+    def refresh_input_parameters(self):
+        data = self.request("InputParameterListRequest")
+        self.input_model_loaded = bool(data.get("modelLoaded"))
+        self.input_model_name = data.get("modelName", "")
+
+        parameters = {}
+        for section in ("defaultParameters", "customParameters"):
+            for param in data.get(section, []):
+                name = param.get("name")
+                if name:
+                    parameters[name] = param
+        self.input_parameters = parameters
+
+        if self.input_model_loaded:
+            print(
+                f"VTS input parameters: {len(self.input_parameters)} "
+                f"for model '{self.input_model_name}'"
+            )
+        else:
+            print("VTS input parameters: no model loaded")
+        return data
+
+    def inject_face_position(self, face_found, position=None, expressions=None, angles=None):
         if position is None:
             position = {"x": 0.0, "y": 0.0, "z": 0.0}
         expressions = expressions or {}
+        angles = angles or {}
 
         parameter_values = [
-            {"id": "FacePositionX", "value": float(position["x"]), "weight": 1.0},
-            {"id": "FacePositionY", "value": float(position["y"]), "weight": 1.0},
-            {"id": "FacePositionZ", "value": float(position["z"]), "weight": 1.0},
+            self._make_parameter_value("FacePositionX", position["x"]),
+            self._make_parameter_value("FacePositionY", position["y"]),
+            self._make_parameter_value("FacePositionZ", position["z"]),
         ]
         parameter_values.extend(
-            {"id": key, "value": float(value), "weight": 1.0}
+            self._make_parameter_value(key, value)
             for key, value in expressions.items()
+        )
+        parameter_values.extend(
+            self._make_parameter_value(key, value)
+            for key, value in angles.items()
         )
 
         self.request(
@@ -117,6 +151,13 @@ class VTubeStudioClient:
                 "parameterValues": parameter_values,
             },
         )
+
+    def _make_parameter_value(self, parameter_id, value):
+        value = float(value)
+        param_info = self.input_parameters.get(parameter_id)
+        if param_info is not None:
+            value = clamp(value, float(param_info["min"]), float(param_info["max"]))
+        return {"id": parameter_id, "value": value, "weight": 1.0}
 
     def _authenticate_with_token(self, token):
         data = self.request(
@@ -292,6 +333,7 @@ def try_connect_vts(vts, next_retry_at):
         vts.connect()
         vts.authenticate()
         print("VTube Studio connected.")
+        vts.refresh_input_parameters()
     except Exception as exc:
         vts.close()
         print(f"[WARN] VTube Studio unavailable: {exc}. Retrying in {VTS_RETRY_INTERVAL:.0f}s.")
@@ -299,7 +341,8 @@ def try_connect_vts(vts, next_retry_at):
     return now + VTS_RETRY_INTERVAL
 
 
-def draw_debug(frame, face, position, vts_connected, fps=0.0, landmarks=None, expressions=None):
+def draw_debug(frame, face, position, vts_connected, fps=0.0, landmarks=None,
+               expressions=None, angles=None, show_landmark_indexes=False):
     if face is not None:
         x1, y1, x2, y2 = map(int, face["xyxy"])
         cx, cy = map(int, face["center"])
@@ -315,7 +358,13 @@ def draw_debug(frame, face, position, vts_connected, fps=0.0, landmarks=None, ex
             1,
         )
 
-    draw_pfld_landmarks(frame, landmarks, color=(0, 180, 255), radius=1)
+    draw_pfld_landmarks(
+        frame,
+        landmarks,
+        color=(0, 180, 255),
+        radius=1,
+        show_indexes=show_landmark_indexes,
+    )
 
     cv2.circle(
         frame,
@@ -365,6 +414,19 @@ def draw_debug(frame, face, position, vts_connected, fps=0.0, landmarks=None, ex
             (0, 180, 255),
             2,
         )
+    if angles:
+        cv2.putText(
+            frame,
+            "Angle "
+            f"X={angles.get('FaceAngleX', 0.0):.1f} "
+            f"Y={angles.get('FaceAngleY', 0.0):.1f} "
+            f"Z={angles.get('FaceAngleZ', 0.0):.1f}",
+            (10, 150),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.55,
+            (255, 180, 0),
+            2,
+        )
     return frame
 
 
@@ -379,6 +441,12 @@ def run_bridge(args):
         landmark_detector = PFLDLandmarkDetector(args.landmark_model)
     except Exception as exc:
         print(f"[WARN] PFLD expressions disabled: {exc}")
+    head_pose_estimator = None
+    if not args.no_head_pose:
+        try:
+            head_pose_estimator = HeadPoseEstimator3DDFA(args.head_pose_config)
+        except Exception as exc:
+            print(f"[WARN] 3DDFA head pose disabled: {exc}")
 
     cap = cv2.VideoCapture(args.input)
     if not cap.isOpened():
@@ -397,6 +465,11 @@ def run_bridge(args):
         print(f"Expression smoothing: alpha={args.expression_alpha}")
     else:
         print("PFLD landmarks: disabled")
+    if head_pose_estimator is not None:
+        print(f"3DDFA head pose: {args.head_pose_config} ({', '.join(head_pose_estimator.providers)})")
+        print(f"Head pose smoothing: alpha={args.head_pose_alpha}")
+    else:
+        print("3DDFA head pose: disabled")
     print(f"VTube Studio: ws://{args.vtshost}:{args.vtsport}")
     print(f"VTube Studio retry interval: {VTS_RETRY_INTERVAL:.0f}s")
     print("Press Ctrl+C to stop. Use --show to display a debug preview.")
@@ -413,6 +486,7 @@ def run_bridge(args):
         hold_frames=args.hold_frames,
     )
     expression_filter = ExpressionFilter(alpha=args.expression_alpha)
+    head_pose_filter = HeadPoseFilter(alpha=args.head_pose_alpha)
 
     try:
         while True:
@@ -443,6 +517,7 @@ def run_bridge(args):
                 position = {"x": 0.0, "y": 0.0, "z": 0.0}
                 smoothed_position = None
                 expression_filter.reset()
+                head_pose_filter.reset()
             else:
                 position = face_to_vts_position(face, frame_w, frame_h)
                 smoothed_position = smooth_position(smoothed_position, position, args.smoothing)
@@ -450,18 +525,23 @@ def run_bridge(args):
 
             landmarks = None
             expressions = {}
+            angles = {}
             if landmark_detector is not None and face is not None and not face.get("held"):
                 landmarks = landmark_detector.detect(frame, face)
                 expressions = expression_filter.update(estimate_expressions(landmarks))
+            if head_pose_estimator is not None and face is not None and not face.get("held"):
+                pose = head_pose_estimator.estimate(frame, face)
+                angles = head_pose_filter.update(pose) if pose else {}
             elif face is None:
                 expression_filter.reset()
+                head_pose_filter.reset()
 
             now = time.perf_counter()
             next_vts_retry = try_connect_vts(vts, next_vts_retry)
 
             if vts.connected and now - last_send >= send_interval:
                 try:
-                    vts.inject_face_position(face_found, position, expressions)
+                    vts.inject_face_position(face_found, position, expressions, angles)
                 except Exception as exc:
                     print(f"[WARN] Lost VTube Studio connection: {exc}. Retrying in {VTS_RETRY_INTERVAL:.0f}s.")
                     vts.close()
@@ -471,7 +551,10 @@ def run_bridge(args):
             if args.show:
                 fps = float(np.mean(fps_deque)) if fps_deque else 0.0
                 debug_landmarks = None if args.no_landmarks else landmarks
-                debug_frame = draw_debug(frame, face, position, vts.connected, fps, debug_landmarks, expressions)
+                debug_frame = draw_debug(
+                    frame, face, position, vts.connected, fps,
+                    debug_landmarks, expressions, angles, args.show_landmark_indexes
+                )
                 cv2.imshow("VTube Studio Bridge", debug_frame)
                 if cv2.waitKey(1) & 0xFF == ord("q"):
                     break
@@ -499,12 +582,18 @@ def parse_args():
     parser.add_argument("--landmark-model", type=str, default=str(DEFAULT_LANDMARK_MODEL),
                         help="Path to PFLD ONNX landmark model.")
     parser.add_argument("--no-landmarks", action="store_true", help="Disable PFLD landmark drawing in debug preview.")
+    parser.add_argument("--show-landmark-indexes", action="store_true",
+                        help="Draw PFLD landmark indexes in debug preview.")
+    parser.add_argument("--head-pose-config", type=str, default=str(DEFAULT_HEAD_POSE_CONFIG),
+                        help="Path to 3DDFA_V2 head-pose config.")
+    parser.add_argument("--no-head-pose", action="store_true", help="Disable 3DDFA FaceAngleX/Y/Z estimation.")
     parser.add_argument("--send-fps", type=float, default=30.0, help="Max parameter updates per second.")
     parser.add_argument("--smoothing", type=float, default=0.55, help="Position smoothing alpha, 0..1.")
     parser.add_argument("--bbox-alpha", type=float, default=0.55, help="Face box EMA alpha, 0..1.")
     parser.add_argument("--bbox-window", type=int, default=5, help="Face box median filter window size.")
     parser.add_argument("--hold-frames", type=int, default=3, help="Keep the last face box for brief detection drops.")
     parser.add_argument("--expression-alpha", type=float, default=0.45, help="Expression EMA alpha, 0..1.")
+    parser.add_argument("--head-pose-alpha", type=float, default=0.35, help="Head pose EMA alpha, 0..1.")
     parser.add_argument("--nohalf", action="store_true", help="Disable FP16 inference on CUDA.")
     parser.add_argument("--show", action="store_true", help="Show debug preview window.")
     return parser.parse_args()
@@ -515,6 +604,7 @@ def main():
     args.smoothing = clamp(args.smoothing, 0.0, 1.0)
     args.bbox_alpha = clamp(args.bbox_alpha, 0.0, 1.0)
     args.expression_alpha = clamp(args.expression_alpha, 0.0, 1.0)
+    args.head_pose_alpha = clamp(args.head_pose_alpha, 0.0, 1.0)
     args.bbox_window = max(1, args.bbox_window)
     args.hold_frames = max(0, args.hold_frames)
     args.send_fps = max(1.0, args.send_fps)
