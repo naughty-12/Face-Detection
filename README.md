@@ -7,26 +7,50 @@
 ```bash
 # 1. 安装依赖
 pip install -r requirements.txt
+```
 
-# 2. 实时摄像头检测
+### 实时摄像头检测
+
+```bash
 python deployment/realtime_detect.py --input 0
+# 按 q 退出，按 s 截图
+```
 
-# 传 --half 时使用FP16推理
-python deployment/realtime_detect.py --input 0 --half
+### 视频文件分析
 
-# 3. 视频文件检测
-python deployment/realtime_detect.py --input path/to/video.mp4
+```bash
+python deployment/realtime_detect.py --input video.mp4
+python deployment/realtime_detect.py --input video.mp4 --save output.mp4   # 保存结果视频
+```
 
-# 4. Vtube Studio 人脸追踪
-# 默认host与port，无调试窗口
+### 单张图片分析
+
+```bash
+python deployment/realtime_detect.py --input photo.jpg
+python deployment/realtime_detect.py --input photo.jpg --save results/     # 保存到文件夹
+```
+
+### 批量文件夹分析
+
+```bash
+python deployment/realtime_detect.py --input my_photos/
+python deployment/realtime_detect.py --input my_photos/ --save results/    # 全部保存
+```
+
+### VTS面部捕捉
+### 默认host与port，无调试窗口
+```bash
 python deployment/vtube_studio_bridge.py --input 0
+```
 
-# 指定VTube Studio API地址，并显示调试窗口
+### 指定VTube Studio API地址，并显示调试窗口
+```bash
 python deployment/vtube_studio_bridge.py --input 0 --vtshost 127.0.0.1 --vtsport 8001 --show
+```
 
-# Vtube Studio桥接默认启用FP16推理，如需关闭：
+### Vtube Studio桥接默认启用FP16推理，如需关闭：
+```bash
 python deployment/vtube_studio_bridge.py --input 0 --nohalf
-
 ```
 
 ## 项目结构
