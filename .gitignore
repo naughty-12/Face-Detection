@@ -4,15 +4,22 @@ __pycache__/
 *.pyo
 _wheels/
 
-# Model weights (downloadable from ultralytics)
+# Model weights — only ship best deployment models
 *.pt
+!training/checkpoints/best_model_v1.pt
+!training/checkpoints/best_model_v2.pt
+*.onnx
+!training/checkpoints/best_model_v2.onnx
 
-# Dataset (large files, downloaded separately)
+# Dataset (large files, downloaded separately — see data/download_widerface.py)
 data/raw/
 data/annotations/wider_face_split/
 
-# Training artifacts
-training/checkpoints/
+# Training intermediate weights (best copies already saved at checkpoints/best_model_*.pt)
+training/checkpoints/*/weights/
+# Training batch debug images (hundreds of MB, not needed for eval)
+training/checkpoints/v1_baseline/train_batch*.jpg
+training/checkpoints/v2_finetune/train_batch*.jpg
 training/training_log.txt
 runs/
 
@@ -20,6 +27,6 @@ runs/
 .DS_Store
 .claude/settings.local.json
 
-# Reports
+# Generated reports (not source code)
 *.doc
 *.docx
