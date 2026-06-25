@@ -1,6 +1,9 @@
-names:
-  0: face
-nc: 1
-path: data/raw
+# WIDER Face dataset config for YOLOv8
+path: data\raw
 train: WIDER_train
 val: WIDER_val
+
+names:
+  0: face
+
+nc: 1
