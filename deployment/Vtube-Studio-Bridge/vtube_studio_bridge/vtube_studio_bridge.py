@@ -62,11 +62,29 @@ TRACKING_PARAMETER_SPECS = [
     {"name": "EyeRightY", "source_default": 0.0, "source_min": -1.0, "source_max": 1.0},
 ]
 TRACKING_PARAMETER_NAMES = [spec["name"] for spec in TRACKING_PARAMETER_SPECS]
+CALIBRATION_CENTER_RESET_PARAMETERS = {
+    "FacePositionX",
+    "FacePositionY",
+    "FacePositionZ",
+    "FaceAngleX",
+    "FaceAngleY",
+    "FaceAngleZ",
+}
+NO_CENTER_PARAMETERS = {
+    "EyeOpenLeft",
+    "EyeOpenRight",
+    "MouthOpen",
+    "MouthSmile",
+}
 _ACTIVE_MEDIAPIPE_DETECTOR = None
 
 
 def clamp(value, min_value, max_value):
     return max(min_value, min(max_value, value))
+
+
+def uses_center_parameter(name):
+    return name not in NO_CENTER_PARAMETERS
 
 
 def build_tracking_values(position, expressions, angles, eye_gaze):
@@ -138,9 +156,13 @@ class TrackingCalibrationState:
         self.max_value = float(self.source_max)
 
     def reset_to_default(self):
-        default_value = float(self.center_value)
-        self.min_value = default_value
-        self.max_value = default_value
+        if self.name in CALIBRATION_CENTER_RESET_PARAMETERS:
+            default_value = float(self.center_value)
+            self.min_value = default_value
+            self.max_value = default_value
+        else:
+            self.min_value = 1.0
+            self.max_value = 0.0
 
     def set_limits(self, min_value, max_value):
         min_value = float(min_value)
@@ -207,13 +229,15 @@ class TrackingCalibrationManager:
     def set_center_to_current(self, name):
         with self.lock:
             state = self.states[name]
-            state.set_center(state.current_value)
+            if uses_center_parameter(name):
+                state.set_center(state.current_value)
             return state
 
     def set_all_centers_to_current(self):
         with self.lock:
             for state in self.states.values():
-                state.set_center(state.current_value)
+                if uses_center_parameter(state.name):
+                    state.set_center(state.current_value)
             return self.snapshot()
 
     def items(self):
@@ -250,7 +274,7 @@ class TrackingCalibrationManager:
             for name, values in parameters.items():
                 if name not in self.states or not isinstance(values, dict):
                     continue
-                if "center" in values:
+                if uses_center_parameter(name) and "center" in values:
                     self.states[name].set_center(values["center"])
                 if "min" in values and "max" in values:
                     self.states[name].set_limits(values["min"], values["max"])
@@ -273,11 +297,7 @@ class TrackingCalibrationManager:
                 "updatedAt": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
                 "cameraPreviewEnabled": bool(camera_preview_enabled),
                 "parameters": {
-                    name: {
-                        "center": state.center_value,
-                        "min": state.min_value,
-                        "max": state.max_value,
-                    }
+                    name: self._state_config(state)
                     for name, state in self.states.items()
                 },
             }
@@ -286,6 +306,16 @@ class TrackingCalibrationManager:
         with open(path, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=2)
         return path
+
+    @staticmethod
+    def _state_config(state):
+        data = {
+            "min": state.min_value,
+            "max": state.max_value,
+        }
+        if uses_center_parameter(state.name):
+            data["center"] = state.center_value
+        return data
 
     @staticmethod
     def _map_value(state, raw_value, param_info):
@@ -306,6 +336,11 @@ class TrackingCalibrationManager:
         target_min = float(param_info["min"])
         target_max = float(param_info["max"])
         target_default = float(param_info.get("defaultValue", (target_min + target_max) / 2.0))
+
+        if not uses_center_parameter(state.name):
+            ratio = (raw_value - source_min) / (source_max - source_min)
+            mapped = target_min + ratio * (target_max - target_min)
+            return clamp(mapped, min(target_min, target_max), max(target_min, target_max))
 
         if abs(source_center - source_min) < 1e-9 and raw_value <= source_center:
             return clamp(target_default, min(target_min, target_max), max(target_min, target_max))
@@ -847,8 +882,13 @@ if QtWidgets is not None:
 
                 button = QtWidgets.QPushButton("校准")
                 button.setMinimumWidth(72)
-                center_button = QtWidgets.QPushButton("回中")
-                center_button.setMinimumWidth(72)
+                if uses_center_parameter(name):
+                    center_button = QtWidgets.QPushButton("回中")
+                    center_button.setMinimumWidth(72)
+                else:
+                    center_button = QtWidgets.QLabel("-")
+                    center_button.setAlignment(QtCore.Qt.AlignCenter)
+                    center_button.setToolTip("此参数只使用 Min/Max 校准")
 
                 self._table.setCellWidget(row, 2, min_box)
                 self._table.setCellWidget(row, 3, max_box)
@@ -865,7 +905,8 @@ if QtWidgets is not None:
 
                 min_box.valueChanged.connect(partial(self._on_limits_changed, name))
                 max_box.valueChanged.connect(partial(self._on_limits_changed, name))
-                center_button.clicked.connect(partial(self._set_center, name))
+                if uses_center_parameter(name):
+                    center_button.clicked.connect(partial(self._set_center, name))
                 button.clicked.connect(partial(self._toggle_calibration, name))
 
             self.refresh_calibration_table()
@@ -874,6 +915,8 @@ if QtWidgets is not None:
             row = self._rows[name]
             state = self.calibration_manager.set_limits(name, row["min_box"].value(), row["max_box"].value())
             self._sync_row(name, state)
+            path = self._save_config()
+            print(f"Config saved: {path}")
 
         def _toggle_calibration(self, name, *_):
             state = self.calibration_manager.toggle(name)
@@ -922,7 +965,8 @@ if QtWidgets is not None:
                 blocker = QtCore.QSignalBlocker(row["max_box"])
                 row["max_box"].setValue(float(max_value))
                 del blocker
-            row["center_button"].setToolTip(f"Center: {float(center_value):.4f}")
+            if uses_center_parameter(name):
+                row["center_button"].setToolTip(f"Center: {float(center_value):.4f}")
             row["button"].setText("结束" if calibrating else "校准")
 
         @staticmethod
