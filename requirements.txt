@@ -4,6 +4,8 @@ torchvision>=0.11.0
 ultralytics>=8.0.0
 numpy>=1.19.0
 opencv-python>=4.5.0
+mediapipe>=0.10.0
+PyQt5>=5.15.0
 
 # 数据增强与处理
 albumentations>=1.0.0

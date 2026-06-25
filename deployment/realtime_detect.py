@@ -251,6 +251,7 @@ Examples:
         if ext in IMAGE_EXTS:
             # single image
             save_dir = args.save
+            frame = None
             if save_dir and os.path.splitext(save_dir)[1]:  # save is a file path
                 os.makedirs(os.path.dirname(save_dir) or ".", exist_ok=True)
                 frame, faces = detect_image(model, args.input, args.imgsz, args.conf, save_dir=None)
@@ -258,11 +259,12 @@ Examples:
                     cv2.imwrite(save_dir, frame)
                     print(f"Saved → {save_dir}")
             else:
-                detect_image(model, args.input, args.imgsz, args.conf, save_dir=save_dir)
-            cv2.imshow("Detection Result", frame)
-            print("\nPress any key to close the image window.")
-            cv2.waitKey(0)
-            cv2.destroyAllWindows()
+                frame, faces = detect_image(model, args.input, args.imgsz, args.conf, save_dir=save_dir)
+            if frame is not None:
+                cv2.imshow("Detection Result", frame)
+                print("\nPress any key to close the image window.")
+                cv2.waitKey(0)
+                cv2.destroyAllWindows()
         elif ext in VIDEO_EXTS:
             # video file
             detect_stream(model, args.input, args.imgsz, args.conf, save_path=args.save)
