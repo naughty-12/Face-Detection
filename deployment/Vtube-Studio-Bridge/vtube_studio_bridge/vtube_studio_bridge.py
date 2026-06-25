@@ -125,18 +125,20 @@ class TrackingCalibrationState:
     source_default: float
     source_min: float
     source_max: float
+    center_value: float = 0.0
     current_value: float = 0.0
     min_value: float = 0.0
     max_value: float = 0.0
     calibrating: bool = False
 
     def __post_init__(self):
+        self.center_value = float(self.source_default)
         self.current_value = float(self.source_default)
         self.min_value = float(self.source_min)
         self.max_value = float(self.source_max)
 
     def reset_to_default(self):
-        default_value = float(self.source_default)
+        default_value = float(self.center_value)
         self.min_value = default_value
         self.max_value = default_value
 
@@ -157,6 +159,9 @@ class TrackingCalibrationState:
                 self.min_value = self.current_value
             if self.current_value > self.max_value:
                 self.max_value = self.current_value
+
+    def set_center(self, value):
+        self.center_value = float(value)
 
     def toggle_calibration(self):
         self.calibrating = not self.calibrating
@@ -194,6 +199,23 @@ class TrackingCalibrationManager:
             self.states[name].set_limits(min_value, max_value)
             return self.states[name]
 
+    def set_center(self, name, center_value):
+        with self.lock:
+            self.states[name].set_center(center_value)
+            return self.states[name]
+
+    def set_center_to_current(self, name):
+        with self.lock:
+            state = self.states[name]
+            state.set_center(state.current_value)
+            return state
+
+    def set_all_centers_to_current(self):
+        with self.lock:
+            for state in self.states.values():
+                state.set_center(state.current_value)
+            return self.snapshot()
+
     def items(self):
         with self.lock:
             return list(self.states.items())
@@ -203,6 +225,7 @@ class TrackingCalibrationManager:
             return {
                 name: {
                     "name": state.name,
+                    "center_value": state.center_value,
                     "current_value": state.current_value,
                     "min_value": state.min_value,
                     "max_value": state.max_value,
@@ -227,6 +250,8 @@ class TrackingCalibrationManager:
             for name, values in parameters.items():
                 if name not in self.states or not isinstance(values, dict):
                     continue
+                if "center" in values:
+                    self.states[name].set_center(values["center"])
                 if "min" in values and "max" in values:
                     self.states[name].set_limits(values["min"], values["max"])
         return data
@@ -249,6 +274,7 @@ class TrackingCalibrationManager:
                 "cameraPreviewEnabled": bool(camera_preview_enabled),
                 "parameters": {
                     name: {
+                        "center": state.center_value,
                         "min": state.min_value,
                         "max": state.max_value,
                     }
@@ -267,6 +293,7 @@ class TrackingCalibrationManager:
         source_max = float(state.max_value)
         if source_min > source_max:
             source_min, source_max = source_max, source_min
+        source_center = clamp(float(getattr(state, "center_value", state.source_default)), source_min, source_max)
 
         raw_value = clamp(float(raw_value), source_min, source_max)
         if abs(source_max - source_min) < 1e-9:
@@ -274,12 +301,29 @@ class TrackingCalibrationManager:
                 return clamp(float(param_info["defaultValue"]), float(param_info["min"]), float(param_info["max"]))
             return raw_value
 
-        normalized = (raw_value - source_min) / (source_max - source_min)
         if param_info is None:
             return raw_value
         target_min = float(param_info["min"])
         target_max = float(param_info["max"])
-        mapped = target_min + normalized * (target_max - target_min)
+        target_default = float(param_info.get("defaultValue", (target_min + target_max) / 2.0))
+
+        if abs(source_center - source_min) < 1e-9 and raw_value <= source_center:
+            return clamp(target_default, min(target_min, target_max), max(target_min, target_max))
+        if abs(source_max - source_center) < 1e-9 and raw_value >= source_center:
+            return clamp(target_default, min(target_min, target_max), max(target_min, target_max))
+
+        if raw_value <= source_center:
+            if abs(source_center - source_min) < 1e-9:
+                mapped = target_default
+            else:
+                ratio = (raw_value - source_min) / (source_center - source_min)
+                mapped = target_min + ratio * (target_default - target_min)
+        else:
+            if abs(source_max - source_center) < 1e-9:
+                mapped = target_default
+            else:
+                ratio = (raw_value - source_center) / (source_max - source_center)
+                mapped = target_default + ratio * (target_max - target_default)
         return clamp(mapped, min(target_min, target_max), max(target_min, target_max))
 
     def map_values(self, values, input_parameters):
@@ -732,6 +776,8 @@ if QtWidgets is not None:
             self._camera_preview_button = QtWidgets.QPushButton()
             self._sync_camera_preview_button()
             self._camera_preview_button.clicked.connect(self._toggle_camera_preview)
+            self._all_center_button = QtWidgets.QPushButton("一键回中")
+            self._all_center_button.clicked.connect(self._set_all_centers)
 
             self._label = PreviewLabel(alignment=QtCore.Qt.AlignCenter)
             self._label.setMinimumSize(640, 360)
@@ -739,8 +785,8 @@ if QtWidgets is not None:
             self._label.setText("Waiting for frames...")
             self._label.centerSelected.connect(self._on_preview_center_selected)
 
-            self._table = QtWidgets.QTableWidget(len(TRACKING_PARAMETER_SPECS), 5)
-            self._table.setHorizontalHeaderLabels(["Parameter", "Value", "Min", "Max", "Calibration"])
+            self._table = QtWidgets.QTableWidget(len(TRACKING_PARAMETER_SPECS), 6)
+            self._table.setHorizontalHeaderLabels(["Parameter", "Value", "Min", "Max", "Center", "Calibration"])
             self._table.verticalHeader().setVisible(False)
             self._table.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
             self._table.setSelectionMode(QtWidgets.QAbstractItemView.NoSelection)
@@ -751,19 +797,24 @@ if QtWidgets is not None:
             header.setSectionResizeMode(2, QtWidgets.QHeaderView.ResizeToContents)
             header.setSectionResizeMode(3, QtWidgets.QHeaderView.ResizeToContents)
             header.setSectionResizeMode(4, QtWidgets.QHeaderView.ResizeToContents)
+            header.setSectionResizeMode(5, QtWidgets.QHeaderView.ResizeToContents)
 
             self._build_parameter_table()
 
             preview_panel = QtWidgets.QWidget()
             preview_layout = QtWidgets.QVBoxLayout(preview_panel)
             preview_layout.setContentsMargins(0, 0, 0, 0)
-            preview_layout.addWidget(self._camera_preview_button)
             preview_layout.addWidget(self._label)
 
             table_panel = QtWidgets.QWidget()
             table_layout = QtWidgets.QVBoxLayout(table_panel)
             table_layout.setContentsMargins(0, 0, 0, 0)
             table_layout.addWidget(self._table)
+            control_layout = QtWidgets.QHBoxLayout()
+            control_layout.addWidget(self._camera_preview_button)
+            control_layout.addWidget(self._all_center_button)
+            control_layout.addStretch(1)
+            table_layout.addLayout(control_layout)
 
             splitter = QtWidgets.QSplitter(QtCore.Qt.Horizontal)
             splitter.addWidget(preview_panel)
@@ -796,20 +847,25 @@ if QtWidgets is not None:
 
                 button = QtWidgets.QPushButton("校准")
                 button.setMinimumWidth(72)
+                center_button = QtWidgets.QPushButton("回中")
+                center_button.setMinimumWidth(72)
 
                 self._table.setCellWidget(row, 2, min_box)
                 self._table.setCellWidget(row, 3, max_box)
-                self._table.setCellWidget(row, 4, button)
+                self._table.setCellWidget(row, 4, center_button)
+                self._table.setCellWidget(row, 5, button)
 
                 self._rows[name] = {
                     "value_label": value_label,
                     "min_box": min_box,
                     "max_box": max_box,
+                    "center_button": center_button,
                     "button": button,
                 }
 
                 min_box.valueChanged.connect(partial(self._on_limits_changed, name))
                 max_box.valueChanged.connect(partial(self._on_limits_changed, name))
+                center_button.clicked.connect(partial(self._set_center, name))
                 button.clicked.connect(partial(self._toggle_calibration, name))
 
             self.refresh_calibration_table()
@@ -826,6 +882,18 @@ if QtWidgets is not None:
                 path = self._save_config()
                 print(f"Calibration saved: {path}")
 
+        def _set_center(self, name, *_):
+            state = self.calibration_manager.set_center_to_current(name)
+            self._sync_row(name, state)
+            path = self._save_config()
+            print(f"Center saved: {path}")
+
+        def _set_all_centers(self, *_):
+            self.calibration_manager.set_all_centers_to_current()
+            self.refresh_calibration_table()
+            path = self._save_config()
+            print(f"All centers saved: {path}")
+
         def refresh_calibration_table(self):
             for name, state in self.calibration_manager.items():
                 self._sync_row(name, state)
@@ -841,6 +909,7 @@ if QtWidgets is not None:
             current_value = self._state_value(state, "current_value", 0.0)
             min_value = self._state_value(state, "min_value", 0.0)
             max_value = self._state_value(state, "max_value", 0.0)
+            center_value = self._state_value(state, "center_value", 0.0)
             calibrating = self._state_value(state, "calibrating", False)
 
             value_label = row["value_label"]
@@ -853,6 +922,7 @@ if QtWidgets is not None:
                 blocker = QtCore.QSignalBlocker(row["max_box"])
                 row["max_box"].setValue(float(max_value))
                 del blocker
+            row["center_button"].setToolTip(f"Center: {float(center_value):.4f}")
             row["button"].setText("结束" if calibrating else "校准")
 
         @staticmethod
