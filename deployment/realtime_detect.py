@@ -4,6 +4,7 @@ import argparse
 import time
 import cv2
 import numpy as np
+import torch
 from collections import deque
 from ultralytics import YOLO
 
@@ -32,9 +33,11 @@ def draw_results(frame, results, fps):
     return frame
 
 
-def run_realtime(model_path, input_source=0, imgsz=640, conf=0.25):
+def run_realtime(model_path, input_source=0, imgsz=640, conf=0.25, half=False):
     """Main loop: capture → inference → draw → display"""
     model = YOLO(model_path)
+    device = 0 if torch.cuda.is_available() else "cpu"
+    use_half = bool(half) and device != "cpu"
 
     cap = cv2.VideoCapture(input_source)
     if not cap.isOpened():
@@ -42,6 +45,8 @@ def run_realtime(model_path, input_source=0, imgsz=640, conf=0.25):
 
     print(f"Model: {model_path}")
     print(f"Input: {'webcam' if isinstance(input_source, int) else input_source}")
+    print(f"Device: {device}")
+    print(f"Half precision: {use_half}")
     print(f"Press 'q' to quit.\n")
 
     fps_deque = deque(maxlen=30)
@@ -52,7 +57,7 @@ def run_realtime(model_path, input_source=0, imgsz=640, conf=0.25):
             break
 
         t0 = time.perf_counter()
-        results = model(frame, imgsz=imgsz, conf=conf, verbose=False)
+        results = model(frame, imgsz=imgsz, conf=conf, device=device, half=use_half, verbose=False)
         t1 = time.perf_counter()
 
         latency = (t1 - t0) * 1000
@@ -78,10 +83,12 @@ def main():
     parser.add_argument("--imgsz", type=int, default=640)
     parser.add_argument("--conf", type=float, default=0.25,
                         help="Confidence threshold")
+    parser.add_argument("--half", action="store_true",
+                        help="Use FP16 inference on CUDA")
     args = parser.parse_args()
 
     input_source = int(args.input) if args.input.isdigit() else args.input
-    run_realtime(args.model, input_source, args.imgsz, args.conf)
+    run_realtime(args.model, input_source, args.imgsz, args.conf, args.half)
 
 
 if __name__ == "__main__":
