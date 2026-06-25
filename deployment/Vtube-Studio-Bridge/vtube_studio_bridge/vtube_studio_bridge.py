@@ -211,11 +211,42 @@ class TrackingCalibrationManager:
                 for name, state in self.states.items()
             }
 
-    def save(self, path=CALIBRATION_CONFIG_FILE):
+    def load(self, path=CALIBRATION_CONFIG_FILE):
+        path = Path(path)
+        if not path.exists():
+            return {}
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+        except (OSError, json.JSONDecodeError) as exc:
+            print(f"[WARN] Failed to load config from {path}: {exc}")
+            return {}
+
+        parameters = data.get("parameters", {})
+        with self.lock:
+            for name, values in parameters.items():
+                if name not in self.states or not isinstance(values, dict):
+                    continue
+                if "min" in values and "max" in values:
+                    self.states[name].set_limits(values["min"], values["max"])
+        return data
+
+    def save(self, path=CALIBRATION_CONFIG_FILE, camera_preview_enabled=None):
+        path = Path(path)
+        if camera_preview_enabled is None and path.exists():
+            try:
+                with open(path, "r", encoding="utf-8") as f:
+                    camera_preview_enabled = json.load(f).get("cameraPreviewEnabled", True)
+            except (OSError, json.JSONDecodeError):
+                camera_preview_enabled = True
+        elif camera_preview_enabled is None:
+            camera_preview_enabled = True
+
         with self.lock:
             data = {
                 "version": 1,
                 "updatedAt": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
+                "cameraPreviewEnabled": bool(camera_preview_enabled),
                 "parameters": {
                     name: {
                         "min": state.min_value,
@@ -225,7 +256,6 @@ class TrackingCalibrationManager:
                 },
             }
 
-        path = Path(path)
         path.parent.mkdir(parents=True, exist_ok=True)
         with open(path, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=2)
@@ -473,15 +503,19 @@ class VTubeStudioWorker:
             self.next_retry_at = now + VTS_RETRY_INTERVAL
 
 
-def select_center_face(boxes, frame_width, frame_height):
-    """Pick the detected face whose center is closest to the camera center."""
+def select_center_face(boxes, frame_width, frame_height, target_center=None):
+    """Pick the detected face whose center is closest to the selected preview point."""
     if boxes is None or len(boxes) == 0:
         return None
 
     xyxy = boxes.xyxy.detach().cpu().numpy()
     conf = boxes.conf.detach().cpu().numpy()
-    frame_cx = frame_width / 2.0
-    frame_cy = frame_height / 2.0
+    if target_center is None:
+        target_x = frame_width / 2.0
+        target_y = frame_height / 2.0
+    else:
+        target_x = clamp(float(target_center[0]), 0.0, 1.0) * frame_width
+        target_y = clamp(float(target_center[1]), 0.0, 1.0) * frame_height
 
     best = None
     best_distance = math.inf
@@ -489,7 +523,7 @@ def select_center_face(boxes, frame_width, frame_height):
         x1, y1, x2, y2 = map(float, box)
         cx = (x1 + x2) / 2.0
         cy = (y1 + y2) / 2.0
-        distance = (cx - frame_cx) ** 2 + (cy - frame_cy) ** 2
+        distance = (cx - target_x) ** 2 + (cy - target_y) ** 2
         if distance < best_distance:
             best_distance = distance
             best = {
@@ -644,22 +678,66 @@ def average_timings(timings):
 
 
 if QtWidgets is not None:
+    class PreviewLabel(QtWidgets.QLabel):
+        centerSelected = QtCore.pyqtSignal(float, float)
+
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+            self._pixmap_size = None
+
+        def set_preview_pixmap(self, pixmap):
+            self._pixmap_size = pixmap.size()
+            self.setPixmap(pixmap)
+
+        def mousePressEvent(self, event):
+            if event.button() != QtCore.Qt.LeftButton or self._pixmap_size is None:
+                super().mousePressEvent(event)
+                return
+
+            pixmap_w = self._pixmap_size.width()
+            pixmap_h = self._pixmap_size.height()
+            if pixmap_w <= 0 or pixmap_h <= 0:
+                super().mousePressEvent(event)
+                return
+
+            left = (self.width() - pixmap_w) / 2.0
+            top = (self.height() - pixmap_h) / 2.0
+            x = event.pos().x()
+            y = event.pos().y()
+            if x < left or y < top or x > left + pixmap_w or y > top + pixmap_h:
+                super().mousePressEvent(event)
+                return
+
+            self.centerSelected.emit(
+                clamp((x - left) / pixmap_w, 0.0, 1.0),
+                clamp((y - top) / pixmap_h, 0.0, 1.0),
+            )
+            event.accept()
+
+
     class QtDebugWindow(QtWidgets.QWidget):
         """Qt-based debug preview window for future calibration tools."""
 
-        def __init__(self, calibration_manager, title="VTube Studio Bridge"):
+        def __init__(self, calibration_manager, camera_preview_enabled=True, title="VTube Studio Bridge"):
             super().__init__()
             self.calibration_manager = calibration_manager
             self._rows = {}
             self._closed = False
+            self._target_center = (0.5, 0.5)
+            self._camera_preview_enabled = bool(camera_preview_enabled)
             self.setWindowTitle(title)
             self.setMinimumSize(1280, 720)
             self.setFocusPolicy(QtCore.Qt.StrongFocus)
 
-            self._label = QtWidgets.QLabel(alignment=QtCore.Qt.AlignCenter)
+            self._camera_preview_button = QtWidgets.QPushButton()
+            self._sync_camera_preview_button()
+            self._camera_preview_button.clicked.connect(self._toggle_camera_preview)
+
+            self._label = PreviewLabel(alignment=QtCore.Qt.AlignCenter)
             self._label.setMinimumSize(640, 360)
             self._label.setStyleSheet("background-color: #111; color: #eee;")
             self._label.setText("Waiting for frames...")
+            self._label.centerSelected.connect(self._on_preview_center_selected)
 
             self._table = QtWidgets.QTableWidget(len(TRACKING_PARAMETER_SPECS), 5)
             self._table.setHorizontalHeaderLabels(["Parameter", "Value", "Min", "Max", "Calibration"])
@@ -679,6 +757,7 @@ if QtWidgets is not None:
             preview_panel = QtWidgets.QWidget()
             preview_layout = QtWidgets.QVBoxLayout(preview_panel)
             preview_layout.setContentsMargins(0, 0, 0, 0)
+            preview_layout.addWidget(self._camera_preview_button)
             preview_layout.addWidget(self._label)
 
             table_panel = QtWidgets.QWidget()
@@ -744,7 +823,7 @@ if QtWidgets is not None:
             state = self.calibration_manager.toggle(name)
             self._sync_row(name, state)
             if not state.calibrating:
-                path = self.calibration_manager.save()
+                path = self._save_config()
                 print(f"Calibration saved: {path}")
 
         def refresh_calibration_table(self):
@@ -798,11 +877,39 @@ if QtWidgets is not None:
                 QtCore.Qt.KeepAspectRatio,
                 QtCore.Qt.SmoothTransformation,
             )
-            self._label.setPixmap(pixmap)
+            self._label.set_preview_pixmap(pixmap)
 
         @property
         def closed(self):
             return self._closed
+
+        @property
+        def target_center(self):
+            return self._target_center
+
+        @property
+        def camera_preview_enabled(self):
+            return self._camera_preview_enabled
+
+        def _toggle_camera_preview(self, *_):
+            self._camera_preview_enabled = not self._camera_preview_enabled
+            self._sync_camera_preview_button()
+            path = self._save_config()
+            print(f"Config saved: {path}")
+
+        def _sync_camera_preview_button(self):
+            self._camera_preview_button.setText(
+                "关闭摄像头预览" if self._camera_preview_enabled else "打开摄像头预览"
+            )
+
+        def _save_config(self):
+            return self.calibration_manager.save(
+                camera_preview_enabled=self._camera_preview_enabled,
+            )
+
+        def _on_preview_center_selected(self, x, y):
+            self._target_center = (float(x), float(y))
+            print(f"Face priority center: x={x:.3f}, y={y:.3f}")
 
         def closeEvent(self, event):
             self._closed = True
@@ -813,7 +920,11 @@ else:
 
 def draw_debug(frame, face, position, vts_connected, fps=0.0, landmarks=None,
                expressions=None, angles=None, eye_gaze=None,
-               show_landmark_indexes=False, timings=None):
+               show_landmark_indexes=False, timings=None, target_center=None,
+               show_camera_preview=True):
+    if not show_camera_preview:
+        frame = np.zeros_like(frame)
+
     if face is not None:
         x1, y1, x2, y2 = map(int, face["xyxy"])
         cx, cy = map(int, face["center"])
@@ -838,13 +949,21 @@ def draw_debug(frame, face, position, vts_connected, fps=0.0, landmarks=None,
             show_indexes=show_landmark_indexes,
         )
 
-    cv2.circle(
-        frame,
-        (frame.shape[1] // 2, frame.shape[0] // 2),
-        5,
-        (255, 0, 0),
-        -1,
+    target_x = 0.5 if target_center is None else clamp(float(target_center[0]), 0.0, 1.0)
+    target_y = 0.5 if target_center is None else clamp(float(target_center[1]), 0.0, 1.0)
+    target_px = (
+        int(round(target_x * (frame.shape[1] - 1))),
+        int(round(target_y * (frame.shape[0] - 1))),
     )
+    cv2.drawMarker(
+        frame,
+        target_px,
+        (255, 0, 0),
+        markerType=cv2.MARKER_CROSS,
+        markerSize=18,
+        thickness=2,
+    )
+    cv2.circle(frame, target_px, 5, (255, 0, 0), -1)
     cv2.putText(
         frame,
         f"VTS Pos X={position['x']:.2f} Y={position['y']:.2f} Z={position['z']:.2f}",
@@ -965,10 +1084,14 @@ def run_bridge(args):
     vts_worker = VTubeStudioWorker(args.vtshost, args.vtsport, args.send_fps)
     vts_worker.start()
     calibration_manager = TrackingCalibrationManager(TRACKING_PARAMETER_SPECS)
+    config_data = calibration_manager.load()
     if QtWidgets is None:
         raise RuntimeError("PyQt5 is not available.")
     qt_app = QtWidgets.QApplication.instance() or QtWidgets.QApplication(sys.argv)
-    qt_window = QtDebugWindow(calibration_manager)
+    qt_window = QtDebugWindow(
+        calibration_manager,
+        camera_preview_enabled=bool(config_data.get("cameraPreviewEnabled", True)),
+    )
     qt_window.show()
 
     print(f"Camera: {args.input}")
@@ -1005,6 +1128,7 @@ def run_bridge(args):
     expression_filter = ParameterFilter(alpha=args.expression_alpha)
     head_pose_filter = ParameterFilter(alpha=args.head_pose_alpha)
     eye_gaze_filter = ParameterFilter(alpha=args.eye_gaze_alpha)
+    last_target_center = None
 
     try:
         while True:
@@ -1028,6 +1152,15 @@ def run_bridge(args):
                 break
 
             frame_h, frame_w = frame.shape[:2]
+            target_center = qt_window.target_center
+            if target_center != last_target_center:
+                face_filter.reset()
+                smoothed_position = None
+                expression_filter.reset()
+                head_pose_filter.reset()
+                eye_gaze_filter.reset()
+                last_target_center = target_center
+
             stage_start = time.perf_counter()
             results = model(
                 frame,
@@ -1038,7 +1171,7 @@ def run_bridge(args):
                 verbose=False,
             )
             record_timing(timing_deques, "yolo", stage_start)
-            raw_face = select_center_face(results[0].boxes, frame_w, frame_h)
+            raw_face = select_center_face(results[0].boxes, frame_w, frame_h, target_center)
             face, face_found = face_filter.update(raw_face, frame_w, frame_h)
 
             mediapipe_ready = False
@@ -1096,7 +1229,7 @@ def run_bridge(args):
             debug_frame = draw_debug(
                 frame, face, position, vts_worker.connected, fps,
                 debug_landmarks, expressions, angles, eye_gaze, args.show_landmark_indexes,
-                timing_summary
+                timing_summary, target_center, qt_window.camera_preview_enabled
             )
             qt_window.update_frame(debug_frame)
             qt_app.processEvents()

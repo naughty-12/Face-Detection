@@ -31,3 +31,6 @@ runs/
 # Generated reports (not source code)
 *.doc
 *.docx
+
+# VTS Bridge Generated Config
+tracking_calibration.json
