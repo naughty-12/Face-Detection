@@ -132,6 +132,7 @@ python deployment/vtube_studio_bridge.py --input 0 --nohalf
 | `--bbox-alpha` | `0.55` | 人脸框 EMA 滤波系数，越大响应越快 |
 | `--bbox-window` | `5` | 人脸框中值滤波窗口大小 |
 | `--hold-frames` | `3` | 检测短暂丢失时保持上一人脸框的帧数 |
+| `--expression-alpha` | `0.45` | 表情参数 EMA 平滑系数，越大响应越快 |
 
 ### 性能测试
 

@@ -18,6 +18,7 @@ import torch
 from ultralytics import YOLO
 from websocket import create_connection
 
+from thirdparty.PFLD.expression import ExpressionFilter, estimate_expressions
 from thirdparty.PFLD.pfld_onnx import PFLDLandmarkDetector, draw_landmarks as draw_pfld_landmarks
 
 
@@ -93,20 +94,27 @@ class VTubeStudioClient:
         if not self._authenticate_with_token(token):
             raise RuntimeError("VTube Studio authentication failed after token approval.")
 
-    def inject_face_position(self, face_found, position=None):
+    def inject_face_position(self, face_found, position=None, expressions=None):
         if position is None:
             position = {"x": 0.0, "y": 0.0, "z": 0.0}
+        expressions = expressions or {}
+
+        parameter_values = [
+            {"id": "FacePositionX", "value": float(position["x"]), "weight": 1.0},
+            {"id": "FacePositionY", "value": float(position["y"]), "weight": 1.0},
+            {"id": "FacePositionZ", "value": float(position["z"]), "weight": 1.0},
+        ]
+        parameter_values.extend(
+            {"id": key, "value": float(value), "weight": 1.0}
+            for key, value in expressions.items()
+        )
 
         self.request(
             "InjectParameterDataRequest",
             {
                 "faceFound": bool(face_found),
                 "mode": "set",
-                "parameterValues": [
-                    {"id": "FacePositionX", "value": float(position["x"]), "weight": 1.0},
-                    {"id": "FacePositionY", "value": float(position["y"]), "weight": 1.0},
-                    {"id": "FacePositionZ", "value": float(position["z"]), "weight": 1.0},
-                ],
+                "parameterValues": parameter_values,
             },
         )
 
@@ -291,7 +299,7 @@ def try_connect_vts(vts, next_retry_at):
     return now + VTS_RETRY_INTERVAL
 
 
-def draw_debug(frame, face, position, vts_connected, fps=0.0, landmarks=None):
+def draw_debug(frame, face, position, vts_connected, fps=0.0, landmarks=None, expressions=None):
     if face is not None:
         x1, y1, x2, y2 = map(int, face["xyxy"])
         cx, cy = map(int, face["center"])
@@ -343,6 +351,20 @@ def draw_debug(frame, face, position, vts_connected, fps=0.0, landmarks=None):
         (0, 255, 255),
         2,
     )
+    if expressions:
+        cv2.putText(
+            frame,
+            "Expr "
+            f"EyeL={expressions.get('EyeOpenLeft', 0.0):.2f} "
+            f"EyeR={expressions.get('EyeOpenRight', 0.0):.2f} "
+            f"Mouth={expressions.get('MouthOpen', 0.0):.2f} "
+            f"Smile={expressions.get('MouthSmile', 0.0):.2f}",
+            (10, 120),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.55,
+            (0, 180, 255),
+            2,
+        )
     return frame
 
 
@@ -353,11 +375,10 @@ def run_bridge(args):
     use_half = (not args.nohalf) and device != "cpu" and not is_onnx_model
     model = YOLO(args.model, task="detect")
     landmark_detector = None
-    if not args.no_landmarks:
-        try:
-            landmark_detector = PFLDLandmarkDetector(args.landmark_model)
-        except Exception as exc:
-            print(f"[WARN] PFLD landmarks disabled: {exc}")
+    try:
+        landmark_detector = PFLDLandmarkDetector(args.landmark_model)
+    except Exception as exc:
+        print(f"[WARN] PFLD expressions disabled: {exc}")
 
     cap = cv2.VideoCapture(args.input)
     if not cap.isOpened():
@@ -373,6 +394,7 @@ def run_bridge(args):
     print(f"Box filter: alpha={args.bbox_alpha}, window={args.bbox_window}, hold={args.hold_frames}")
     if landmark_detector is not None:
         print(f"PFLD landmarks: {args.landmark_model} ({', '.join(landmark_detector.providers)})")
+        print(f"Expression smoothing: alpha={args.expression_alpha}")
     else:
         print("PFLD landmarks: disabled")
     print(f"VTube Studio: ws://{args.vtshost}:{args.vtsport}")
@@ -390,6 +412,7 @@ def run_bridge(args):
         window_size=args.bbox_window,
         hold_frames=args.hold_frames,
     )
+    expression_filter = ExpressionFilter(alpha=args.expression_alpha)
 
     try:
         while True:
@@ -419,21 +442,26 @@ def run_bridge(args):
             if not face_found:
                 position = {"x": 0.0, "y": 0.0, "z": 0.0}
                 smoothed_position = None
+                expression_filter.reset()
             else:
                 position = face_to_vts_position(face, frame_w, frame_h)
                 smoothed_position = smooth_position(smoothed_position, position, args.smoothing)
                 position = smoothed_position
 
             landmarks = None
-            if args.show and landmark_detector is not None and face is not None and not face.get("held"):
+            expressions = {}
+            if landmark_detector is not None and face is not None and not face.get("held"):
                 landmarks = landmark_detector.detect(frame, face)
+                expressions = expression_filter.update(estimate_expressions(landmarks))
+            elif face is None:
+                expression_filter.reset()
 
             now = time.perf_counter()
             next_vts_retry = try_connect_vts(vts, next_vts_retry)
 
             if vts.connected and now - last_send >= send_interval:
                 try:
-                    vts.inject_face_position(face_found, position)
+                    vts.inject_face_position(face_found, position, expressions)
                 except Exception as exc:
                     print(f"[WARN] Lost VTube Studio connection: {exc}. Retrying in {VTS_RETRY_INTERVAL:.0f}s.")
                     vts.close()
@@ -442,7 +470,8 @@ def run_bridge(args):
 
             if args.show:
                 fps = float(np.mean(fps_deque)) if fps_deque else 0.0
-                debug_frame = draw_debug(frame, face, position, vts.connected, fps, landmarks)
+                debug_landmarks = None if args.no_landmarks else landmarks
+                debug_frame = draw_debug(frame, face, position, vts.connected, fps, debug_landmarks, expressions)
                 cv2.imshow("VTube Studio Bridge", debug_frame)
                 if cv2.waitKey(1) & 0xFF == ord("q"):
                     break
@@ -469,12 +498,13 @@ def parse_args():
     parser.add_argument("--conf", type=float, default=0.25, help="YOLO confidence threshold.")
     parser.add_argument("--landmark-model", type=str, default=str(DEFAULT_LANDMARK_MODEL),
                         help="Path to PFLD ONNX landmark model.")
-    parser.add_argument("--no-landmarks", action="store_true", help="Disable PFLD landmark visualization.")
+    parser.add_argument("--no-landmarks", action="store_true", help="Disable PFLD landmark drawing in debug preview.")
     parser.add_argument("--send-fps", type=float, default=30.0, help="Max parameter updates per second.")
     parser.add_argument("--smoothing", type=float, default=0.55, help="Position smoothing alpha, 0..1.")
     parser.add_argument("--bbox-alpha", type=float, default=0.55, help="Face box EMA alpha, 0..1.")
     parser.add_argument("--bbox-window", type=int, default=5, help="Face box median filter window size.")
     parser.add_argument("--hold-frames", type=int, default=3, help="Keep the last face box for brief detection drops.")
+    parser.add_argument("--expression-alpha", type=float, default=0.45, help="Expression EMA alpha, 0..1.")
     parser.add_argument("--nohalf", action="store_true", help="Disable FP16 inference on CUDA.")
     parser.add_argument("--show", action="store_true", help="Show debug preview window.")
     return parser.parse_args()
@@ -484,6 +514,7 @@ def main():
     args = parse_args()
     args.smoothing = clamp(args.smoothing, 0.0, 1.0)
     args.bbox_alpha = clamp(args.bbox_alpha, 0.0, 1.0)
+    args.expression_alpha = clamp(args.expression_alpha, 0.0, 1.0)
     args.bbox_window = max(1, args.bbox_window)
     args.hold_frames = max(0, args.hold_frames)
     args.send_fps = max(1.0, args.send_fps)
