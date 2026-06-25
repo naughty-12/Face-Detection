@@ -7,12 +7,34 @@
 ```bash
 # 1. 安装依赖
 pip install -r requirements.txt
+```
 
-# 2. 实时摄像头检测
+### 实时摄像头检测
+
+```bash
 python deployment/realtime_detect.py --input 0
+# 按 q 退出，按 s 截图
+```
 
-# 3. 视频文件检测
-python deployment/realtime_detect.py --input path/to/video.mp4
+### 视频文件分析
+
+```bash
+python deployment/realtime_detect.py --input video.mp4
+python deployment/realtime_detect.py --input video.mp4 --save output.mp4   # 保存结果视频
+```
+
+### 单张图片分析
+
+```bash
+python deployment/realtime_detect.py --input photo.jpg
+python deployment/realtime_detect.py --input photo.jpg --save results/     # 保存到文件夹
+```
+
+### 批量文件夹分析
+
+```bash
+python deployment/realtime_detect.py --input my_photos/
+python deployment/realtime_detect.py --input my_photos/ --save results/    # 全部保存
 ```
 
 ## 项目结构
