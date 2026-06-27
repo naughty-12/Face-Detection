@@ -10,32 +10,42 @@ sys.path.insert(0, PROJECT_ROOT)
 
 CHECKPOINT_DIR = os.path.join(PROJECT_ROOT, "training", "checkpoints")
 DEPLOY_DIR = os.path.dirname(os.path.abspath(__file__))
+IMGSZ = 640
+
+
+def resolve_existing_path(label, candidates):
+    for path in candidates:
+        if os.path.exists(path):
+            return path
+    joined = "\n  ".join(candidates)
+    raise FileNotFoundError(f"{label} not found. Checked:\n  {joined}")
 
 
 def benchmark_pytorch(model_path, num_warmup=50, num_test=200):
     from ultralytics import YOLO
     model = YOLO(model_path)
-    model.model.eval()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    dummy = torch.randn(1, 3, 640, 640).to(device)
+    model.model.to(device)
+    model.model.eval()
+    dummy = torch.randn(1, 3, IMGSZ, IMGSZ, device=device)
 
-    for _ in range(num_warmup):
-        with torch.no_grad():
+    with torch.inference_mode():
+        for _ in range(num_warmup):
             _ = model.model(dummy)
     if device.type == "cuda":
         torch.cuda.synchronize()
 
     times = []
-    for _ in range(num_test):
-        if device.type == "cuda":
-            torch.cuda.synchronize()
-        t0 = time.perf_counter()
-        with torch.no_grad():
+    with torch.inference_mode():
+        for _ in range(num_test):
+            if device.type == "cuda":
+                torch.cuda.synchronize()
+            t0 = time.perf_counter()
             _ = model.model(dummy)
-        if device.type == "cuda":
-            torch.cuda.synchronize()
-        t1 = time.perf_counter()
-        times.append((t1 - t0) * 1000)
+            if device.type == "cuda":
+                torch.cuda.synchronize()
+            t1 = time.perf_counter()
+            times.append((t1 - t0) * 1000)
 
     avg_latency = np.mean(times)
     fps = 1000.0 / avg_latency
@@ -45,10 +55,16 @@ def benchmark_pytorch(model_path, num_warmup=50, num_test=200):
 
 def benchmark_onnx(onnx_path, num_warmup=50, num_test=200):
     import onnxruntime as ort
-    providers = ["CUDAExecutionProvider", "CPUExecutionProvider"]
+    available_providers = ort.get_available_providers()
+    providers = []
+    if "CUDAExecutionProvider" in available_providers:
+        providers.append("CUDAExecutionProvider")
+    providers.append("CPUExecutionProvider")
+
     session = ort.InferenceSession(onnx_path, providers=providers)
+    print(f"ONNX provider: {session.get_providers()[0]}")
     input_name = session.get_inputs()[0].name
-    dummy = np.random.randn(1, 3, 640, 640).astype(np.float32)
+    dummy = np.random.randn(1, 3, IMGSZ, IMGSZ).astype(np.float32)
 
     for _ in range(num_warmup):
         _ = session.run(None, {input_name: dummy})
@@ -72,8 +88,20 @@ def main():
     print(f"Device: {'CUDA' if torch.cuda.is_available() else 'CPU'}")
     print("=" * 60)
 
-    v2_pt = os.path.join(CHECKPOINT_DIR, "best_model_v2.pt")
-    v2_onnx = os.path.join(DEPLOY_DIR, "best_model_v2.onnx")
+    v2_pt = resolve_existing_path(
+        "PyTorch model",
+        [
+            os.path.join(CHECKPOINT_DIR, "best_model_v2.pt"),
+            os.path.join(DEPLOY_DIR, "best_model_v2.pt"),
+        ],
+    )
+    v2_onnx = resolve_existing_path(
+        "ONNX model",
+        [
+            os.path.join(CHECKPOINT_DIR, "best_model_v2.onnx"),
+            os.path.join(DEPLOY_DIR, "best_model_v2.onnx"),
+        ],
+    )
 
     print("\n[1] PyTorch Inference Speed")
     pt_fps, pt_latency = benchmark_pytorch(v2_pt)
