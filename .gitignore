@@ -17,11 +17,19 @@ data/annotations/wider_face_split/
 
 # Training intermediate weights (best copies already saved at checkpoints/best_model_*.pt)
 training/checkpoints/*/weights/
-# Training batch debug images (hundreds of MB, not needed for eval)
-training/checkpoints/v1_baseline/train_batch*.jpg
-training/checkpoints/v2_finetune/train_batch*.jpg
+# Training batch debug images (regenerated on every training run)
+training/checkpoints/**/train_batch*.jpg
 training/training_log.txt
 runs/
+
+# Runtime artifacts (local demo outputs, regenerated on each run)
+/output_result.mp4
+/screenshot_*.jpg
+/results/
+
+# Delivery bundle (regenerated after the project is finalized)
+/高精度人脸检测/
+/高精度人脸检测.zip
 
 # System
 .DS_Store
