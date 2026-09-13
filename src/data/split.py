@@ -1,8 +1,7 @@
 """Convert WIDER Face annotations to train_list.txt / val_list.txt"""
 import os
 
-ANNO_DIR = os.path.join(os.path.dirname(__file__), "annotations")
-RAW_DIR = os.path.join(os.path.dirname(__file__), "raw")
+from src.paths import ANNO_DIR, TRAIN_IMAGES_DIR, VAL_IMAGES_DIR, TRAIN_LIST, VAL_LIST
 
 
 def parse_wider_annotation(anno_file, image_root):
@@ -35,19 +34,19 @@ def parse_wider_annotation(anno_file, image_root):
 
 def main():
     train_anno = os.path.join(ANNO_DIR, "wider_face_split", "wider_face_train_bbx_gt.txt")
-    train_images = os.path.join(RAW_DIR, "WIDER_train", "images")
+    train_images = TRAIN_IMAGES_DIR
     val_anno = os.path.join(ANNO_DIR, "wider_face_split", "wider_face_val_bbx_gt.txt")
-    val_images = os.path.join(RAW_DIR, "WIDER_val", "images")
+    val_images = VAL_IMAGES_DIR
 
     train_samples = parse_wider_annotation(train_anno, train_images)
     print(f"Training samples: {len(train_samples)}")
     val_samples = parse_wider_annotation(val_anno, val_images)
     print(f"Validation samples: {len(val_samples)}")
 
-    with open(os.path.join(ANNO_DIR, "train_list.txt"), "w") as f:
+    with open(TRAIN_LIST, "w") as f:
         for img_path, _ in train_samples:
             f.write(f"{img_path}\n")
-    with open(os.path.join(ANNO_DIR, "val_list.txt"), "w") as f:
+    with open(VAL_LIST, "w") as f:
         for img_path, _ in val_samples:
             f.write(f"{img_path}\n")
 

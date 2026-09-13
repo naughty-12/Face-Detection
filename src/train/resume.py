@@ -26,18 +26,13 @@ cv2.imread = _imread_unicode
 
 from ultralytics import YOLO
 
-PROJECT_ROOT = os.path.dirname(os.path.dirname(__file__))
-sys.path.insert(0, PROJECT_ROOT)
-
-CHECKPOINT_DIR = os.path.join(os.path.dirname(__file__), "checkpoints")
-DATA_DIR = os.path.join(PROJECT_ROOT, "data")
-ANNO_DIR = os.path.join(DATA_DIR, "annotations")
+from src.paths import CHECKPOINT_DIR, PROJECT_ROOT, RAW_DIR, WIDER_YAML
 
 
 def prepare_data_yaml():
     """Regenerate data.yaml (ensures val path is correct)"""
-    data_yaml_path = os.path.join(ANNO_DIR, "widerface.yaml")
-    rel_path = os.path.relpath(os.path.join(DATA_DIR, "raw"), PROJECT_ROOT)
+    data_yaml_path = WIDER_YAML
+    rel_path = os.path.relpath(RAW_DIR, PROJECT_ROOT)
 
     yaml_content = f"""# WIDER Face dataset config for YOLOv8
 path: {rel_path}

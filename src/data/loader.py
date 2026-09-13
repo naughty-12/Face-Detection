@@ -1,11 +1,11 @@
 """Unified DataLoader for WIDER Face dataset"""
 import os
+
 import cv2
 import torch
 from torch.utils.data import Dataset, DataLoader
 
-ANNO_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "annotations")
-RAW_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "raw")
+from src.paths import ANNO_DIR, RAW_DIR
 
 
 def parse_wider_annotation(anno_file, image_root):
@@ -92,7 +92,7 @@ def collate_fn(batch):
 
 
 def create_dataloader(split="train", batch_size=8, num_workers=2, phase="early"):
-    from dataset.augmentation import get_train_augmentation, get_val_augmentation
+    from src.data.augment import get_train_augmentation, get_val_augmentation
 
     if split == "val" or phase == "val":
         transform = get_val_augmentation()
@@ -106,8 +106,6 @@ def create_dataloader(split="train", batch_size=8, num_workers=2, phase="early")
 
 
 if __name__ == "__main__":
-    import sys
-    sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
     loader = create_dataloader(split="train", batch_size=4, num_workers=0, phase="early")
     images, targets = next(iter(loader))
     print(f"Batch images: {images.shape}")

@@ -1,10 +1,16 @@
-"""Model output shape assertion test"""
+"""Model diagnostics: forward-pass output shapes and TorchScript export readiness.
+
+This is a diagnostic script, not a unit test -- it prints observations instead of
+asserting anything. The pretrained weight used to be referenced as
+"yolov8n-face.pt", a file that never existed in this project; it is now
+"yolov8n.pt", matching `model_name` in configs/model.yaml.
+"""
 import torch
 from ultralytics import YOLO
 
 
 def test_model_output_shapes():
-    model = YOLO("yolov8n-face.pt")
+    model = YOLO("yolov8n.pt")
     model.model.eval()
     dummy_input = torch.randn(1, 3, 640, 640)
     with torch.no_grad():
@@ -27,7 +33,7 @@ def test_model_output_shapes():
 
 
 def test_model_export_readiness():
-    model = YOLO("yolov8n-face.pt")
+    model = YOLO("yolov8n.pt")
     model.model.eval()
     dummy_input = torch.randn(1, 3, 640, 640)
     try:
@@ -39,10 +45,10 @@ def test_model_export_readiness():
 
 
 if __name__ == "__main__":
-    print("Running model unit tests ...")
+    print("Running model diagnostics ...")
     print("=" * 60)
     test_model_output_shapes()
     print("=" * 60)
     test_model_export_readiness()
     print("=" * 60)
-    print("All tests passed.")
+    print("Diagnostics finished (no assertions -- inspect the output above).")

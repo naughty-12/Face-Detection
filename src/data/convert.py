@@ -1,8 +1,7 @@
 """Convert WIDER Face annotations to YOLO-format label files required by ultralytics"""
 import os
 
-ANNO_DIR = os.path.join(os.path.dirname(__file__), "annotations")
-RAW_DIR = os.path.join(os.path.dirname(__file__), "raw")
+from src.paths import ANNO_DIR, RAW_DIR, TRAIN_IMAGES_DIR, VAL_IMAGES_DIR
 
 
 def parse_wider_annotation(anno_file):
@@ -101,13 +100,13 @@ def main():
 
     # Train split
     train_anno = os.path.join(ANNO_DIR, "wider_face_split", "wider_face_train_bbx_gt.txt")
-    train_images = os.path.join(RAW_DIR, "WIDER_train", "images")
+    train_images = TRAIN_IMAGES_DIR
     print("\n[1/2] Training set")
     convert_split("train", train_anno, train_images)
 
     # Val split
     val_anno = os.path.join(ANNO_DIR, "wider_face_split", "wider_face_val_bbx_gt.txt")
-    val_images = os.path.join(RAW_DIR, "WIDER_val", "images")
+    val_images = VAL_IMAGES_DIR
     print("\n[2/2] Validation set")
     convert_split("val", val_anno, val_images)
 

@@ -1,9 +1,9 @@
 """Training hyperparameter management and auto-computation"""
-import os
 import yaml
 
-PROJECT_ROOT = os.path.dirname(os.path.dirname(__file__))
-CONFIG_PATH = os.path.join(PROJECT_ROOT, "model", "model_config.yaml")
+from src.paths import MODEL_CONFIG_PATH
+
+CONFIG_PATH = MODEL_CONFIG_PATH
 
 
 def load_config():

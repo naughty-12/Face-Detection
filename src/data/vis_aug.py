@@ -1,9 +1,12 @@
 """Save augmented batch images with bboxes for manual verification"""
 import os
+
 import cv2
 import numpy as np
 
-OUTPUT_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "evaluation", "reports")
+from src.paths import REPORTS_DIR
+
+OUTPUT_DIR = REPORTS_DIR
 
 
 def draw_boxes(image_tensor, targets, save_path):
@@ -32,9 +35,8 @@ def visualize_batch(dataloader, num_samples=4):
 
 
 if __name__ == "__main__":
-    import sys
-    sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
-    from dataset.dataloader import create_dataloader
+    from src.data.loader import create_dataloader
+
     loader = create_dataloader(split="train", batch_size=4, num_workers=0, phase="late")
     visualize_batch(loader)
-    print("Done. Check evaluation/reports/aug_vis_*.jpg")
+    print(f"Done. Check {REPORTS_DIR}/aug_vis_*.jpg")

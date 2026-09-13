@@ -1,9 +1,10 @@
 """Check WIDER Face annotation quality"""
 import os
+
 import cv2
 
-ANNO_DIR = os.path.join(os.path.dirname(__file__), "annotations")
-RAW_DIR = os.path.join(os.path.dirname(__file__), "raw")
+from src.paths import ANNO_DIR, TRAIN_IMAGES_DIR, VAL_IMAGES_DIR
+
 REPORT_PATH = os.path.join(ANNO_DIR, "quality_report.txt")
 
 MIN_BOX_SIZE = 5
@@ -66,9 +67,9 @@ def main():
     invalid_total = 0
     for split, anno_file, img_root in [
         ("train", os.path.join(ANNO_DIR, "wider_face_split", "wider_face_train_bbx_gt.txt"),
-         os.path.join(RAW_DIR, "WIDER_train", "images")),
+         TRAIN_IMAGES_DIR),
         ("val", os.path.join(ANNO_DIR, "wider_face_split", "wider_face_val_bbx_gt.txt"),
-         os.path.join(RAW_DIR, "WIDER_val", "images")),
+         VAL_IMAGES_DIR),
     ]:
         print(f"\nChecking {split} set...")
         samples = parse_annotation(anno_file, img_root)
