@@ -75,7 +75,7 @@ def validate_precision(pytorch_model_path, onnx_model_path, num_samples=100, tol
 
 def main():
     v2_path = os.path.join(CHECKPOINT_DIR, "best_model_v2.pt")
-    onnx_path = os.path.join(DEPLOY_DIR, "best_model_v2.onnx")
+    onnx_path = os.path.join(CHECKPOINT_DIR, "best_model_v2.onnx")
 
     print("=" * 60)
     print("Step 1: Exporting to ONNX ...")

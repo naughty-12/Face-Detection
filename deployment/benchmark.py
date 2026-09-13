@@ -15,8 +15,9 @@ DEPLOY_DIR = os.path.dirname(os.path.abspath(__file__))
 def benchmark_pytorch(model_path, num_warmup=50, num_test=200):
     from ultralytics import YOLO
     model = YOLO(model_path)
-    model.model.eval()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model.model.to(device)
+    model.model.eval()
     dummy = torch.randn(1, 3, 640, 640).to(device)
 
     for _ in range(num_warmup):
@@ -73,7 +74,7 @@ def main():
     print("=" * 60)
 
     v2_pt = os.path.join(CHECKPOINT_DIR, "best_model_v2.pt")
-    v2_onnx = os.path.join(DEPLOY_DIR, "best_model_v2.onnx")
+    v2_onnx = os.path.join(CHECKPOINT_DIR, "best_model_v2.onnx")
 
     print("\n[1] PyTorch Inference Speed")
     pt_fps, pt_latency = benchmark_pytorch(v2_pt)
