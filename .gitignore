@@ -6,20 +6,19 @@ _wheels/
 
 # Model weights — only ship best deployment models
 *.pt
-!training/checkpoints/best_model_v1.pt
-!training/checkpoints/best_model_v2.pt
+!artifacts/checkpoints/best_model_v1.pt
+!artifacts/checkpoints/best_model_v2.pt
 *.onnx
-!training/checkpoints/best_model_v2.onnx
+!artifacts/checkpoints/best_model_v2.onnx
 
-# Dataset (large files, downloaded separately — see data/download_widerface.py)
+# Dataset (large files, downloaded separately — see src/data/download.py)
 data/raw/
 data/annotations/wider_face_split/
 
-# Training intermediate weights (best copies already saved at checkpoints/best_model_*.pt)
-training/checkpoints/*/weights/
-# Training batch debug images (regenerated on every training run)
-training/checkpoints/**/train_batch*.jpg
-training/training_log.txt
+# Training intermediates (regenerated on every run)
+artifacts/checkpoints/*/weights/
+artifacts/checkpoints/**/train_batch*.jpg
+artifacts/logs/
 runs/
 
 # Runtime artifacts (local demo outputs, regenerated on each run)
