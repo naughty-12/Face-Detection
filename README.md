@@ -218,7 +218,7 @@ python -m src.eval.analyze_errors # TOP20 漏检/误检 + 可视化
 ## 导出与基准
 
 ```bash
-python -m src.deploy.export_onnx   # ONNX 导出（FP32 + simplify，opset 12）+ 精度验证
+python -m src.deploy.export_onnx   # ONNX 导出（FP16 + simplify，opset 12）+ 精度验证
 python -m src.deploy.benchmark     # 网络前向延迟与体积
 ```
 
