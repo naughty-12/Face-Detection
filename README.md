@@ -287,7 +287,7 @@ VTube Studio → Live2D 形象跟随表情
 | 自采数据缺失 | 设计中的 500 张侧脸/遮挡/暗光数据未采集 |
 | 训练吞吐 | 6 GB 显存下 `batch=8 + imgsz=640` 超额分配（峰值 11.1 GB），建议 `batch=4` 或 `imgsz=512` |
 | **测量噪声** | 同一调用实测跨度 **4.8–18.8 ms（约 3 倍）**，单次平均值无意义。`src/deploy/benchmark.py` 已改为报告中位数与分布 |
-| 测试覆盖有限 | `tests/` 有 **33 个测试**覆盖 WIDER 解析、坐标转换与匹配几何（`unittest`，零依赖）；模型 IO、训练流程、桥接时序仍无覆盖 |
+| 测试覆盖有限 | `tests/` 有 **56 个测试**覆盖 WIDER 解析、坐标转换、匹配几何，以及桥接的时序滤波（EMA/中值/hold/reset）与位置映射（`unittest`，零依赖）；**模型 IO、训练全流程仍无覆盖** |
 | 死配置键 | `configs/model.yaml` 的 `accumulation_steps`、`multi_scale`、`architecture` 从未被代码读取 |
 
 ### 运行方式建议（本机实测）
