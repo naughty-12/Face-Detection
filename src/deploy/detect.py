@@ -228,6 +228,8 @@ Examples:
                         help="Confidence threshold (default 0.25)")
     parser.add_argument("--save", type=str, default=None,
                         help="Save path: directory for images, .mp4 file for video/webcam")
+    parser.add_argument("--no-show", action="store_true",
+                        help="Do not open a result window (for scripting, batch and CI use)")
     args = parser.parse_args()
 
     # ── load model ───────────────────────────────────────────
@@ -265,7 +267,7 @@ Examples:
                     print(f"Saved → {save_dir}")
             else:
                 frame, faces = detect_image(model, args.input, args.imgsz, args.conf, save_dir=save_dir)
-            if frame is not None:
+            if frame is not None and not args.no_show:
                 cv2.imshow("Detection Result", frame)
                 print("\nPress any key or click X to close the image window.")
                 while True:
