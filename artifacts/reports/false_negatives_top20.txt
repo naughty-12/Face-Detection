@@ -1,0 +1,62 @@
+20 SMALLEST missed faces (of 15505 total false negatives)
+============================================================
+
+[1] C:\学习\高精度人脸检查算法\data\raw\WIDER_val\images\0--Parade\0_Parade_Parade_0_275.jpg
+    GT box (xywh): 0 0 0 0   side=0.0px
+
+[2] C:\学习\高精度人脸检查算法\data\raw\WIDER_val\images\0--Parade\0_Parade_Parade_0_317.jpg
+    GT box (xywh): 706 94 0 1   side=0.0px
+
+[3] C:\学习\高精度人脸检查算法\data\raw\WIDER_val\images\2--Demonstration\2_Demonstration_Demonstration_Or_Protest_2_476.jpg
+    GT box (xywh): 648 397 0 2   side=0.0px
+
+[4] C:\学习\高精度人脸检查算法\data\raw\WIDER_val\images\2--Demonstration\2_Demonstration_Demonstration_Or_Protest_2_476.jpg
+    GT box (xywh): 867 310 2 0   side=0.0px
+
+[5] C:\学习\高精度人脸检查算法\data\raw\WIDER_val\images\2--Demonstration\2_Demonstration_Political_Rally_2_335.jpg
+    GT box (xywh): 541 229 0 2   side=0.0px
+
+[6] C:\学习\高精度人脸检查算法\data\raw\WIDER_val\images\37--Soccer\37_Soccer_soccer_ball_37_281.jpg
+    GT box (xywh): 0 0 0 0   side=0.0px
+
+[7] C:\学习\高精度人脸检查算法\data\raw\WIDER_val\images\39--Ice_Skating\39_Ice_Skating_iceskiing_39_583.jpg
+    GT box (xywh): 1026 474 0 23   side=0.0px
+
+[8] C:\学习\高精度人脸检查算法\data\raw\WIDER_val\images\50--Celebration_Or_Party\50_Celebration_Or_Party_houseparty_50_715.jpg
+    GT box (xywh): 0 0 0 0   side=0.0px
+
+[9] C:\学习\高精度人脸检查算法\data\raw\WIDER_val\images\7--Cheering\7_Cheering_Cheering_7_426.jpg
+    GT box (xywh): 0 0 0 0   side=0.0px
+
+[10] C:\学习\高精度人脸检查算法\data\raw\WIDER_val\images\7--Cheering\7_Cheering_Cheering_7_171.jpg
+    GT box (xywh): 0 0 16 0   side=0.0px
+
+[11] C:\学习\高精度人脸检查算法\data\raw\WIDER_val\images\7--Cheering\7_Cheering_Cheering_7_171.jpg
+    GT box (xywh): 760 207 0 1   side=0.0px
+
+[12] C:\学习\高精度人脸检查算法\data\raw\WIDER_val\images\2--Demonstration\2_Demonstration_Political_Rally_2_335.jpg
+    GT box (xywh): 27 372 1 1   side=1.0px
+
+[13] C:\学习\高精度人脸检查算法\data\raw\WIDER_val\images\2--Demonstration\2_Demonstration_Demonstration_Or_Protest_2_476.jpg
+    GT box (xywh): 720 578 1 2   side=1.4px
+
+[14] C:\学习\高精度人脸检查算法\data\raw\WIDER_val\images\4--Dancing\4_Dancing_Dancing_4_1043.jpg
+    GT box (xywh): 676 228 1 3   side=1.7px
+
+[15] C:\学习\高精度人脸检查算法\data\raw\WIDER_val\images\0--Parade\0_Parade_marchingband_1_465.jpg
+    GT box (xywh): 603 61 2 2   side=2.0px
+
+[16] C:\学习\高精度人脸检查算法\data\raw\WIDER_val\images\2--Demonstration\2_Demonstration_Demonstrators_2_196.jpg
+    GT box (xywh): 14 227 2 2   side=2.0px
+
+[17] C:\学习\高精度人脸检查算法\data\raw\WIDER_val\images\2--Demonstration\2_Demonstration_Demonstrators_2_196.jpg
+    GT box (xywh): 61 222 2 2   side=2.0px
+
+[18] C:\学习\高精度人脸检查算法\data\raw\WIDER_val\images\2--Demonstration\2_Demonstration_Demonstrators_2_196.jpg
+    GT box (xywh): 55 209 2 2   side=2.0px
+
+[19] C:\学习\高精度人脸检查算法\data\raw\WIDER_val\images\2--Demonstration\2_Demonstration_Demonstrators_2_196.jpg
+    GT box (xywh): 62 210 2 2   side=2.0px
+
+[20] C:\学习\高精度人脸检查算法\data\raw\WIDER_val\images\2--Demonstration\2_Demonstration_Demonstrators_2_196.jpg
+    GT box (xywh): 125 219 2 2   side=2.0px

@@ -1,0 +1,14 @@
+Size-stratified detection analysis
+==========================================================================
+model:    C:\学习\高精度人脸检查算法\artifacts\checkpoints\best_model_v2.pt
+images:   3226
+GT faces: 39708   matched: 24203   missed: 15505
+preds:    29785   spurious: 5582
+recall:   0.6095
+precision:0.8126
+
+size bin                  GT  matched   recall    pred  matched
+Tiny   (<32px)         28775    14186   0.4930   19024    14145
+Small  (32-96px)        8606     7780   0.9040    8462     7838
+Medium (96-256px)       1890     1805   0.9550    1862     1795
+Large  (>256px)          437      432   0.9886     437      425
