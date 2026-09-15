@@ -317,5 +317,6 @@ scikit-learn | Matplotlib | TensorBoard
 | [`docs/项目现状与差距.md`](docs/项目现状与差距.md) | 实现与设计承诺的逐条差距（含证据） |
 | [`docs/使用指南.md`](docs/使用指南.md) | 面向使用者的完整操作说明与 FAQ |
 | [`docs/面试讲解提纲.md`](docs/面试讲解提纲.md) | 讲解流程与预设问答 |
+| [`docs/简历项目经历.md`](docs/简历项目经历.md) | 简历稿（游戏客户端方向），含皮套跑通前后的两版措辞与禁止写清单 |
 | [`CHANGELOG.md`](CHANGELOG.md) | 变更记录 |
 | [`docs/archive/`](docs/archive/README.md) | 历史设计文档（**描述的是当初的目标，不是现状**） |
