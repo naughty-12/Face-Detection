@@ -114,9 +114,10 @@ VTube Studio 虚拟形象驱动的完整链路。**由一人独立完成的工�
 pip install -r requirements.txt
 ```
 
-> **显存注意**：6 GB 卡上 `batch=8 + imgsz=640` 会出现超额分配 —— 训练日志记录的峰值
-> 显存达 **11.1 GB**（Windows WDDM 溢出到共享系统内存），伴随吞吐从 5.8 it/s 掉到 1.7 it/s。
-> 建议降到 `batch=4` 或 `imgsz=512`。
+> **显存注意（已实测）**：6 GB 卡上 `batch=8 + imgsz=640` 的峰值**保留**显存达 **6.18 GiB**，
+> 已超过 6.00 GiB 物理上限，从第一轮起就在向共享内存溢出；100 epoch 长跑会因内存碎片继续增高
+> （历史日志达 11.1 GiB），吞吐从 5.8 it/s 崩到 1.7 it/s。
+> **配置已下调为 `batch=6`**（峰值保留 4.41 GiB，留 27% 余量）。实测脚本：`src/train/probe_vram.py`。
 
 ---
 
@@ -212,7 +213,7 @@ tensorboard --logdir artifacts/checkpoints --port 6006
 
 | 参数 | 值 |
 |:---|:---|
-| batch / imgsz | 8 / 640 |
+| batch / imgsz | 历史训练 **8 / 640**（见 `artifacts/checkpoints/*/args.yaml`）；**配置已改为 6 / 640**（显存实测见上） |
 | optimizer | AdamW，lr 1e-3 → 1e-5 余弦退火 |
 | 混合精度 | `amp=true` |
 | 增强 | `mosaic=1.0`（v2 降至 0.5）、`hsv_*`、`fliplr=0.5`、`translate=0.1`、`scale=0.5`、`close_mosaic=10` |
@@ -285,7 +286,7 @@ VTube Studio → Live2D 形象跟随表情
 | v2 无增益 | 与 v1 基本持平（mAP50 −0.001，mAP50-95 +0.0007），缺困难样本回流 |
 | 增强模块未接入 | `src/data/augment.py` 为独立模块，训练只用 ultralytics 内置增强 |
 | 自采数据缺失 | 设计中的 500 张侧脸/遮挡/暗光数据未采集 |
-| 训练吞吐 | 6 GB 显存下 `batch=8 + imgsz=640` 超额分配（峰值 11.1 GB），建议 `batch=4` 或 `imgsz=512` |
+| 训练吞吐 | 已实测并修复：6 GB 显存下 `batch=8` 峰值保留 **6.18 GiB** 超上限，**配置已改为 `batch=6`**（4.41 GiB）。**尚未用新 batch 重训验证** |
 | **测量噪声** | 同一调用实测跨度 **4.8–18.8 ms（约 3 倍）**，单次平均值无意义。`src/deploy/benchmark.py` 已改为报告中位数与分布 |
 | 测试覆盖有限 | `tests/` 有 **56 个测试**覆盖 WIDER 解析、坐标转换、匹配几何，以及桥接的时序滤波（EMA/中值/hold/reset）与位置映射（`unittest`，零依赖）；**模型 IO、训练全流程仍无覆盖** |
 | 死配置键 | `configs/model.yaml` 的 `accumulation_steps`、`multi_scale`、`architecture` 从未被代码读取 |

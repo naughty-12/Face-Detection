@@ -1,6 +1,6 @@
-# model/model_config.yaml
-# YOLOv8n-face 配置文件
-# GPU: RTX 3060 Laptop 6GB → batch_size=8
+# configs/model.yaml
+# YOLOv8n-face 训练与模型配置
+# GPU（实测）: RTX 3060 Laptop / 6144 MiB（6 GB），驱动 581.95，CUDA 12.1
 
 # 模型选型
 model_name: "yolov8n.pt"      # ultralytics pretrained weights, fine-tuned on face data
@@ -15,7 +15,14 @@ architecture:
 # 训练超参数
 training:
   epochs: 100
-  batch_size: 8
+  # batch_size 由 8 下调为 6。实测（artifacts/logs/probe_vram.py，1 epoch / 5% 数据切片）：
+  #   batch=4 → 峰值保留 3.58 GiB（占物理 60%）
+  #   batch=6 → 峰值保留 4.41 GiB（73%）
+  #   batch=8 → 峰值保留 6.18 GiB —— 已超过 6.00 GiB 物理上限，从第一个 epoch 起即向共享内存
+  #             溢出；100 epoch 长跑会因内存碎片继续增高（历史日志达 11.1 GiB），吞吐从 5.8
+  #             崩到 1.7 it/s。取 6 以保留可用余量。
+  # 注：分配量远小于保留量（batch=8 时仅分配 2.29 GiB），与显存上限相比的是后者。
+  batch_size: 6
   accumulation_steps: 2
   imgsz: 640
   optimizer: "AdamW"
