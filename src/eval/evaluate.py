@@ -29,10 +29,14 @@ def evaluate_widerface(model_path):
         metrics["medium_mAP"] = wf_results.get("Medium", 0.0)
         metrics["hard_mAP"] = wf_results.get("Hard", 0.0)
     except ImportError:
-        print("[WARN] widerface-evaluate not installed. Using ultralytics mAP as reference.")
-        metrics["easy_mAP"] = metrics["mAP50"]
-        metrics["medium_mAP"] = metrics["mAP50"]
-        metrics["hard_mAP"] = metrics["mAP50"]
+        print("[UNAVAILABLE] widerface-evaluate is not installed, so the official")
+        print("              Easy/Medium/Hard split metrics CANNOT be computed.")
+        print("              They are reported as None on purpose -- filling them with")
+        print("              mAP50 would look like a real per-subset result but is not.")
+        print("              Install with:  pip install widerface-evaluate")
+        metrics["easy_mAP"] = None
+        metrics["medium_mAP"] = None
+        metrics["hard_mAP"] = None
 
     return metrics
 
@@ -44,7 +48,7 @@ def generate_predictions(model_path, output_dir):
     if not os.path.exists(val_list_path):
         print("[WARN] val_list.txt not found, skipping prediction generation")
         return
-    with open(val_list_path, "r") as f:
+    with open(val_list_path, "r", encoding="utf-8") as f:
         img_paths = [l.strip() for l in f.readlines()]
     for img_path in img_paths:
         results = model(img_path, verbose=False)
@@ -118,10 +122,17 @@ def main():
     print("=" * 60)
     print(f"{'Metric':<20} {'v1 Baseline':>12} {'v2 Fine-tuned':>12} {'Improvement':>12}")
     print("-" * 60)
+    def _fmt(v):
+        return "n/a" if v is None else f"{v:.4f}"
+
     for key in ["easy_mAP", "medium_mAP", "hard_mAP", "mAP50"]:
-        v1_val = v1_metrics.get(key, 0.0)
-        v2_val = v2_metrics.get(key, 0.0)
-        print(f"{key:<20} {v1_val:>12.4f} {v2_val:>12.4f} {v2_val-v1_val:>+12.4f}")
+        v1_val = v1_metrics.get(key)
+        v2_val = v2_metrics.get(key)
+        if v1_val is None or v2_val is None:
+            delta = "n/a"
+        else:
+            delta = f"{v2_val - v1_val:+.4f}"
+        print(f"{key:<20} {_fmt(v1_val):>12} {_fmt(v2_val):>12} {delta:>12}")
 
     comparison = {"v1": v1_metrics, "v2": v2_metrics}
     save_metrics(comparison, os.path.join(REPORTS_DIR, "comparison.json"))
@@ -135,8 +146,13 @@ def plot_improvement_chart(v1_metrics, v2_metrics, output_dir):
     import matplotlib.pyplot as plt
 
     metrics_keys = ["easy_mAP", "medium_mAP", "hard_mAP"]
-    v1_vals = [v1_metrics.get(k, 0) for k in metrics_keys]
-    v2_vals = [v2_metrics.get(k, 0) for k in metrics_keys]
+    v1_vals = [v1_metrics.get(k) for k in metrics_keys]
+    v2_vals = [v2_metrics.get(k) for k in metrics_keys]
+
+    if any(v is None for v in v1_vals + v2_vals):
+        print("[SKIP] Improvement chart needs Easy/Medium/Hard values, which are unavailable.")
+        print("       Run:  pip install widerface-evaluate")
+        return
 
     x = np.arange(len(metrics_keys))
     width = 0.35

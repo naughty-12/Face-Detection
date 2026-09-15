@@ -3,6 +3,7 @@ import os
 
 import cv2
 
+from src.data.wider_annotations import parse_samples_with_image_root
 from src.paths import ANNO_DIR, TRAIN_IMAGES_DIR, VAL_IMAGES_DIR
 
 REPORT_PATH = os.path.join(ANNO_DIR, "quality_report.txt")
@@ -13,32 +14,13 @@ MIN_FACE_RATIO = 0.001
 
 
 def parse_annotation(anno_file, image_root):
+    """Return [{"img_path", "w", "h", "boxes"}] for entries whose image is readable."""
     samples = []
-    with open(anno_file, "r") as f:
-        lines = [l.strip() for l in f.readlines()]
-    i = 0
-    while i < len(lines):
-        img_name = lines[i]
-        i += 1
-        if i >= len(lines):
-            break
-        num_faces = int(lines[i])
-        i += 1
-        img_path = os.path.join(image_root, img_name)
-        if not os.path.exists(img_path):
-            for _ in range(num_faces):
-                if i < len(lines):
-                    i += 1
+    for img_path, boxes in parse_samples_with_image_root(anno_file, image_root):
+        img = cv2.imread(img_path)
+        if img is None:
             continue
-        h, w = cv2.imread(img_path).shape[:2]
-        boxes = []
-        for _ in range(num_faces):
-            if i >= len(lines):
-                break
-            parts = list(map(int, lines[i].split()[:4]))
-            x, y, bw, bh = parts
-            boxes.append([x, y, bw, bh])
-            i += 1
+        h, w = img.shape[:2]
         samples.append({"img_path": img_path, "w": w, "h": h, "boxes": boxes})
     return samples
 

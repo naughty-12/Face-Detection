@@ -13,12 +13,14 @@ def export_to_onnx(model_path, output_path, imgsz=640):
     model.export(format="onnx", imgsz=imgsz, dynamic=False, simplify=True, opset=12, half=False)
     import shutil
     src = model_path.replace(".pt", ".onnx")
-    if os.path.exists(src):
-        shutil.copy(src, output_path)
-        print(f"ONNX model exported to {output_path}")
-        return output_path
-    else:
+    if not os.path.exists(src):
         raise RuntimeError(f"ONNX export failed, expected output not found at {src}")
+    # ultralytics writes <stem>.onnx next to the .pt, which is usually already the
+    # destination -- shutil.copy onto itself raises SameFileError.
+    if os.path.abspath(src) != os.path.abspath(output_path):
+        shutil.copy(src, output_path)
+    print(f"ONNX model exported to {output_path}")
+    return output_path
 
 
 def validate_precision(pytorch_model_path, onnx_model_path, num_samples=100, tolerance=1e-4):
@@ -32,10 +34,14 @@ def validate_precision(pytorch_model_path, onnx_model_path, num_samples=100, tol
 
     val_list_path = VAL_LIST
     if not os.path.exists(val_list_path):
-        print("[WARN] val_list.txt not found, skipping precision validation")
-        return True
+        print("[SKIPPED] val_list.txt not found at:")
+        print(f"          {val_list_path}")
+        print("          Precision validation cannot run without it. Generate it with:")
+        print("              python -m src.data.split")
+        print("          No MAE was measured -- do NOT report a precision-loss figure.")
+        return None
 
-    with open(val_list_path, "r") as f:
+    with open(val_list_path, "r", encoding="utf-8") as f:
         img_paths = [l.strip() for l in f.readlines()][:num_samples]
 
     total_mae = 0.0
@@ -80,10 +86,13 @@ def main():
     print("\n" + "=" * 60)
     print("Step 2: Validating precision (PyTorch vs ONNX) ...")
     print("=" * 60)
-    passed = validate_precision(v2_path, onnx_path, num_samples=100)
-    if not passed:
-        print("\n[WARN] Precision validation FAILED.")
+    result = validate_precision(v2_path, onnx_path, num_samples=100)
+    if result is False:
+        print("\n[FAIL] Precision validation FAILED -- exported model differs from PyTorch.")
         sys.exit(1)
+    if result is None:
+        print("\n[SKIPPED] Precision validation did not run, so no MAE was measured.")
+        print("          This is not a pass. Fix it with:  python -m src.data.split")
 
     size_mb = os.path.getsize(onnx_path) / 1e6
     print(f"\nONNX Model Size: {size_mb:.2f} MB")

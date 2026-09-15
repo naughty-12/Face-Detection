@@ -1,38 +1,13 @@
 """Convert WIDER Face annotations to YOLO-format label files required by ultralytics"""
 import os
 
+from src.data.wider_annotations import parse_samples
 from src.paths import ANNO_DIR, RAW_DIR, TRAIN_IMAGES_DIR, VAL_IMAGES_DIR
 
 
 def parse_wider_annotation(anno_file):
     """Parse WIDER Face annotation file, return [(img_name, [[x,y,w,h],...]), ...]"""
-    samples = []
-    with open(anno_file, "r") as f:
-        lines = [l.strip() for l in f.readlines()]
-    i = 0
-    while i < len(lines):
-        img_name = lines[i]
-        i += 1
-        if i >= len(lines):
-            break
-        num_faces = int(lines[i])
-        i += 1
-        boxes = []
-        # WIDER Face quirk: some entries have num_faces=0 but still
-        # include a dummy all-zero bbox line — skip it
-        if num_faces == 0 and i < len(lines):
-            parts = lines[i].split()
-            if all(int(v) == 0 for v in parts):
-                i += 1
-        for _ in range(num_faces):
-            if i >= len(lines):
-                break
-            parts = lines[i].split()
-            x, y, w, h = map(int, parts[:4])
-            boxes.append([x, y, w, h])
-            i += 1
-        samples.append((img_name, boxes))
-    return samples
+    return list(parse_samples(anno_file))
 
 
 def boxes_to_yolo(boxes, img_w, img_h):

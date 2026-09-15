@@ -5,34 +5,13 @@ import cv2
 import torch
 from torch.utils.data import Dataset, DataLoader
 
+from src.data.wider_annotations import parse_samples_with_image_root
 from src.paths import ANNO_DIR, RAW_DIR
 
 
 def parse_wider_annotation(anno_file, image_root):
     """Parse WIDER Face annotations, return [(img_path, [[x,y,w,h],...]), ...]"""
-    samples = []
-    with open(anno_file, "r") as f:
-        lines = [l.strip() for l in f.readlines()]
-    i = 0
-    while i < len(lines):
-        img_name = lines[i]
-        i += 1
-        if i >= len(lines):
-            break
-        num_faces = int(lines[i])
-        i += 1
-        boxes = []
-        for _ in range(num_faces):
-            if i >= len(lines):
-                break
-            parts = lines[i].split()
-            x, y, w, h = map(int, parts[:4])
-            boxes.append([x, y, w, h])
-            i += 1
-        img_path = os.path.join(image_root, img_name)
-        if os.path.exists(img_path):
-            samples.append((img_path, boxes))
-    return samples
+    return list(parse_samples_with_image_root(anno_file, image_root))
 
 
 class WiderFaceDataset(Dataset):

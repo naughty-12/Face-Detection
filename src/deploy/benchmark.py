@@ -43,7 +43,16 @@ def benchmark_onnx(onnx_path, num_warmup=50, num_test=200):
     import onnxruntime as ort
     providers = ["CUDAExecutionProvider", "CPUExecutionProvider"]
     session = ort.InferenceSession(onnx_path, providers=providers)
+    active = session.get_providers()
     input_name = session.get_inputs()[0].name
+
+    # Report which provider actually won: request order is only a preference and
+    # onnxruntime silently falls back, so a speed number is meaningless without it.
+    print(f"  requested providers: {providers}")
+    print(f"  ACTIVE provider(s):  {active}")
+    if "CUDAExecutionProvider" not in active:
+        print("  [NOTE] onnxruntime has no CUDA provider here -- this is a CPU number.")
+        print("         Install onnxruntime-gpu for GPU inference.")
     dummy = np.random.randn(1, 3, 640, 640).astype(np.float32)
 
     for _ in range(num_warmup):
@@ -67,6 +76,8 @@ def main():
     print("Performance Benchmark")
     print(f"Device: {'CUDA' if torch.cuda.is_available() else 'CPU'}")
     print("=" * 60)
+    print("SCOPE: network forward pass only -- no letterbox preprocessing, no")
+    print("       decode, no NMS. These are NOT end-to-end pipeline figures.")
 
     v2_pt = os.path.join(CHECKPOINT_DIR, "best_model_v2.pt")
     v2_onnx = os.path.join(CHECKPOINT_DIR, "best_model_v2.onnx")

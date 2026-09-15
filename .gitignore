@@ -14,6 +14,8 @@ _wheels/
 # Dataset (large files, downloaded separately — see src/data/download.py)
 data/raw/
 data/annotations/wider_face_split/
+# Generated image lists (absolute paths, machine specific)
+data/annotations/*_list.txt
 
 # Training intermediates (regenerated on every run)
 artifacts/checkpoints/*/weights/
