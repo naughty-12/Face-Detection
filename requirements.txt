@@ -8,13 +8,20 @@ mediapipe>=0.10.0
 PyQt5>=5.15.0
 
 # 数据增强与处理
-albumentations>=1.0.0
+# 需要 >=2.0：src/data/augment.py 使用 2.x 的 CoarseDropout 参数名。1.x 下参数名不同，
+# 传 2.x 名字会被静默忽略（曾因此让预期"最多 8 个 ≤32px 洞"变成默认的"1~2 个 10~20% 洞"）。
+albumentations>=2.0.0
 pandas>=1.2.0
 matplotlib>=3.3.0
 
 # 评估与指标
 scikit-learn>=0.24.0
-# WIDER Face evaluation
+# WIDER Face 官方分项评测（**可选**）。
+# 项目实际汇报的指标不依赖它：src/eval/evaluate.py 用 ultralytics 自算 mAP，缺此包时把
+# Easy/Medium/Hard 报为 null（不再用 mAP50 冒充）；分项分析由 analyze_errors.py 与
+# conf_sweep.py 以"按尺寸分层"的方式覆盖。
+# 仍列在此处，是因为将来若能安装，官方 Easy/Medium/Hard 指标值得补齐。
+# 注意：安装需要网络，本机受限模式下不可达。
 widerface-evaluate>=0.1.0
 
 # 模型导出与加速

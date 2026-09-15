@@ -50,7 +50,16 @@ def get_train_augmentation(phase="early"):
                 A.RandomBrightnessContrast(brightness_limit=0.3, contrast_limit=0.3, p=0.5),
                 A.HueSaturationValue(hue_shift_limit=15, sat_shift_limit=25, val_shift_limit=25, p=0.3),
                 A.Blur(blur_limit=5, p=0.2),
-                A.CoarseDropout(max_holes=8, max_height=32, max_width=32, p=0.3),
+                # Albumentations 2.x API. The 1.x names (max_holes / max_height / max_width)
+                # are **silently ignored** by 2.0: passing them only emits a UserWarning and
+                # the transform then runs at its defaults (1-2 holes of 10-20%), not at the
+                # intended up-to-8 holes of <=32 px. Verified against albumentations 2.0.8.
+                A.CoarseDropout(
+                    num_holes_range=(1, 8),
+                    hole_height_range=(1, 32),
+                    hole_width_range=(1, 32),
+                    p=0.3,
+                ),
                 A.Resize(640, 640),
                 ToTensorV2(),
             ],

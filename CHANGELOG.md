@@ -243,3 +243,21 @@ setuptools 下构建。
 
 文档同步：README、`docs/架构说明.md`、`docs/项目现状与差距.md`（新增第八节）、
 `.dsh-dev/decisions.md`。
+
+### 修复：`CoarseDropout` 参数被静默忽略
+
+做出 G12 决策后校验时发现，`src/data/augment.py` 的 `CoarseDropout` 用的是 **Albumentations 1.x
+的参数名**（`max_holes` / `max_height` / `max_width`），而项目安装的是 **2.0.8**。这些参数
+**只产生一条 `UserWarning` 后被忽略**，实际生效的是默认值：
+
+| | 预期（1.x 写法） | 实际生效（2.x 默认） |
+|:---|:---|:---|
+| 洞的数量 | 最多 8 个 | `num_holes_range=(1, 2)` |
+| 洞的尺寸 | ≤32 px | `hole_height_range=(0.1, 0.2)`（即 10~20%） |
+
+已改用 2.x API（`num_holes_range=(1, 8)` / `hole_height_range=(1, 32)` /
+`hole_width_range=(1, 32)`），并用 `-W error::UserWarning` 验证构造时不再抛警告。
+`requirements.txt` 相应收紧为 `albumentations>=2.0.0`。
+
+同时把 `widerface-evaluate` 标注为**可选依赖**并说明：项目实际汇报的指标不依赖它
+（缺失时 Easy/Medium/Hard 报 `null`，分项分析由按尺寸分层替代）。
