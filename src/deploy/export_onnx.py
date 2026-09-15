@@ -5,12 +5,7 @@ import numpy as np
 import torch
 from ultralytics import YOLO
 
-PROJECT_ROOT = os.path.dirname(os.path.dirname(__file__))
-sys.path.insert(0, PROJECT_ROOT)
-
-CHECKPOINT_DIR = os.path.join(PROJECT_ROOT, "training", "checkpoints")
-DEPLOY_DIR = os.path.dirname(os.path.abspath(__file__))
-ANNO_DIR = os.path.join(PROJECT_ROOT, "data", "annotations")
+from src.paths import CHECKPOINT_DIR, VAL_LIST
 
 
 def export_to_onnx(model_path, output_path, imgsz=640):
@@ -35,7 +30,7 @@ def validate_precision(pytorch_model_path, onnx_model_path, num_samples=100, tol
     ort_session = ort.InferenceSession(onnx_model_path)
     input_name = ort_session.get_inputs()[0].name
 
-    val_list_path = os.path.join(ANNO_DIR, "val_list.txt")
+    val_list_path = VAL_LIST
     if not os.path.exists(val_list_path):
         print("[WARN] val_list.txt not found, skipping precision validation")
         return True

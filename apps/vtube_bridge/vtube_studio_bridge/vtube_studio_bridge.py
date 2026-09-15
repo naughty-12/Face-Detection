@@ -14,7 +14,10 @@ from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1].parents[1]
 BRIDGE_ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(PROJECT_ROOT))
+# `thirdparty/` lives inside this bridge, so it is BRIDGE_ROOT (not PROJECT_ROOT)
+# that must be importable -- previously this relied on the current working
+# directory happening to be the bridge folder.
+sys.path.insert(0, str(BRIDGE_ROOT))
 
 import cv2
 import numpy as np
@@ -34,8 +37,8 @@ from thirdparty.MediaPipe.face_landmarker import estimate_eye_gaze as estimate_m
 from thirdparty.MediaPipe.face_landmarker import estimate_expressions as estimate_mediapipe_expressions
 
 
-DEFAULT_MODEL = PROJECT_ROOT / "training" / "checkpoints" / "best_model_v2.onnx"
-DEFAULT_MEDIAPIPE_MODEL = PROJECT_ROOT / "deployment" / "Vtube-Studio-Bridge" / "thirdparty" / "MediaPipe" / "models" / "face_landmarker.task"
+DEFAULT_MODEL = PROJECT_ROOT / "artifacts" / "checkpoints" / "best_model_v2.onnx"
+DEFAULT_MEDIAPIPE_MODEL = BRIDGE_ROOT / "thirdparty" / "MediaPipe" / "models" / "face_landmarker.task"
 PLUGIN_NAME = "Face Detection VTube Studio Bridge"
 PLUGIN_DEVELOPER = "Face-Detection Project"
 TOKEN_FILE = Path(os.getenv("APPDATA", Path.home())) / "FaceDetectionVTubeStudioBridge" / "vts_token.json"

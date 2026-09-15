@@ -1,15 +1,10 @@
 """Performance benchmark: FPS, latency, model size"""
 import os
-import sys
 import time
 import numpy as np
 import torch
 
-PROJECT_ROOT = os.path.dirname(os.path.dirname(__file__))
-sys.path.insert(0, PROJECT_ROOT)
-
-CHECKPOINT_DIR = os.path.join(PROJECT_ROOT, "training", "checkpoints")
-DEPLOY_DIR = os.path.dirname(os.path.abspath(__file__))
+from src.paths import CHECKPOINT_DIR
 
 
 def benchmark_pytorch(model_path, num_warmup=50, num_test=200):

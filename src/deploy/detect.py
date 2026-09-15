@@ -1,25 +1,27 @@
 """Real-time face detection — webcam / video file / image / folder (PyTorch)
 
 Usage:
-    python deployment/realtime_detect.py --input 0             # webcam
-    python deployment/realtime_detect.py --input video.mp4     # video file
-    python deployment/realtime_detect.py --input photo.jpg     # single image
-    python deployment/realtime_detect.py --input my_photos/    # image folder (batch)
-    python deployment/realtime_detect.py --input photo.jpg --save output/   # save results
-    python deployment/realtime_detect.py --input video.mp4 --save output.mp4 # save video
+    python -m src.deploy.detect --input 0             # webcam
+    python -m src.deploy.detect --input video.mp4     # video file
+    python -m src.deploy.detect --input photo.jpg     # single image
+    python -m src.deploy.detect --input my_photos/    # image folder (batch)
+    python -m src.deploy.detect --input photo.jpg --save output/    # save results
+    python -m src.deploy.detect --input video.mp4 --save output.mp4 # save video
 """
 import os
 import sys
 import argparse
 import time
-import cv2
-import numpy as np
 from collections import deque
 from pathlib import Path
+
+import cv2
+import numpy as np
 from ultralytics import YOLO
 
-PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DEFAULT_MODEL = os.path.join(PROJECT_ROOT, "training", "checkpoints", "best_model_v2.pt")
+from src.paths import BEST_MODEL_V2_PT
+
+DEFAULT_MODEL = BEST_MODEL_V2_PT
 
 # ── image extensions ────────────────────────────────────────────
 IMAGE_EXTS = {'.jpg', '.jpeg', '.png', '.bmp', '.tiff', '.tif', '.webp'}
@@ -208,12 +210,12 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  python deployment/realtime_detect.py --input 0               # webcam (default)
-  python deployment/realtime_detect.py --input video.mp4        # video file
-  python deployment/realtime_detect.py --input photo.jpg        # single image
-  python deployment/realtime_detect.py --input my_photos/       # batch folder
-  python deployment/realtime_detect.py --input photo.jpg --save results/
-  python deployment/realtime_detect.py --input video.mp4 --save output.mp4
+  python -m src.deploy.detect --input 0               # webcam (default)
+  python -m src.deploy.detect --input video.mp4        # video file
+  python -m src.deploy.detect --input photo.jpg        # single image
+  python -m src.deploy.detect --input my_photos/       # batch folder
+  python -m src.deploy.detect --input photo.jpg --save results/
+  python -m src.deploy.detect --input video.mp4 --save output.mp4
         """
     )
     parser.add_argument("--input", type=str, default="0",

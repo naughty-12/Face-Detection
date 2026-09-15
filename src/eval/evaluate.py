@@ -1,23 +1,16 @@
 """WIDER Face multi-dimensional mAP evaluation + P-R curves"""
 import os
-import sys
 import json
 import numpy as np
 from ultralytics import YOLO
 
-PROJECT_ROOT = os.path.dirname(os.path.dirname(__file__))
-sys.path.insert(0, PROJECT_ROOT)
-
-REPORTS_DIR = os.path.join(os.path.dirname(__file__), "reports")
-CHECKPOINT_DIR = os.path.join(PROJECT_ROOT, "training", "checkpoints")
-DATA_DIR = os.path.join(PROJECT_ROOT, "data")
-ANNO_DIR = os.path.join(DATA_DIR, "annotations")
+from src.paths import ANNO_DIR, CHECKPOINT_DIR, PROJECT_ROOT, REPORTS_DIR, VAL_LIST, WIDER_YAML
 
 
 def evaluate_widerface(model_path):
     """Evaluate model on WIDER Face val set. Falls back to ultralytics built-in val."""
     model = YOLO(model_path)
-    data_yaml = os.path.join(ANNO_DIR, "widerface.yaml")
+    data_yaml = WIDER_YAML
 
     results = model.val(data=data_yaml, split="val", batch=8, imgsz=640, verbose=True)
 
@@ -31,7 +24,7 @@ def evaluate_widerface(model_path):
         pred_dir = os.path.join(REPORTS_DIR, "predictions")
         os.makedirs(pred_dir, exist_ok=True)
         generate_predictions(model_path, pred_dir)
-        wf_results = wf_eval.evaluate(pred_dir, os.path.join(DATA_DIR, "annotations"))
+        wf_results = wf_eval.evaluate(pred_dir, ANNO_DIR)
         metrics["easy_mAP"] = wf_results.get("Easy", 0.0)
         metrics["medium_mAP"] = wf_results.get("Medium", 0.0)
         metrics["hard_mAP"] = wf_results.get("Hard", 0.0)
@@ -47,7 +40,7 @@ def evaluate_widerface(model_path):
 def generate_predictions(model_path, output_dir):
     """Generate WIDER Face format prediction files"""
     model = YOLO(model_path)
-    val_list_path = os.path.join(ANNO_DIR, "val_list.txt")
+    val_list_path = VAL_LIST
     if not os.path.exists(val_list_path):
         print("[WARN] val_list.txt not found, skipping prediction generation")
         return
@@ -75,7 +68,7 @@ def generate_predictions(model_path, output_dir):
 def plot_pr_curve(model_path, save_path=None):
     """Generate P-R curve using ultralytics built-in plotting"""
     model = YOLO(model_path)
-    data_yaml = os.path.join(ANNO_DIR, "widerface.yaml")
+    data_yaml = WIDER_YAML
 
     results = model.val(data=data_yaml, split="val", batch=8, imgsz=640, plots=True)
 

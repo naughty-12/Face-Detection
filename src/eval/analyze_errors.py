@@ -1,19 +1,12 @@
 """Hard sample analysis: TOP20 false negatives/positives + error distribution charts"""
 import os
-import sys
 import numpy as np
 import matplotlib.pyplot as plt
 import cv2
 from ultralytics import YOLO
 
-PROJECT_ROOT = os.path.dirname(os.path.dirname(__file__))
-sys.path.insert(0, PROJECT_ROOT)
-
-REPORTS_DIR = os.path.join(os.path.dirname(__file__), "reports")
-CHECKPOINT_DIR = os.path.join(PROJECT_ROOT, "training", "checkpoints")
-DATA_DIR = os.path.join(PROJECT_ROOT, "data")
-ANNO_DIR = os.path.join(DATA_DIR, "annotations")
-RAW_DIR = os.path.join(DATA_DIR, "raw")
+from src.data.loader import parse_wider_annotation
+from src.paths import ANNO_DIR, CHECKPOINT_DIR, RAW_DIR, REPORTS_DIR
 
 
 def compute_iou(box1, box2):
@@ -39,7 +32,6 @@ def analyze_errors(model_path, split="val", iou_threshold=0.5, top_k=20):
     anno_file = os.path.join(ANNO_DIR, "wider_face_split", f"wider_face_{split}_bbx_gt.txt")
     image_root = os.path.join(RAW_DIR, f"WIDER_{split}", "images")
 
-    from dataset.dataloader import parse_wider_annotation
     samples = parse_wider_annotation(anno_file, image_root)
 
     false_negatives = []
