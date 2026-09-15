@@ -28,6 +28,11 @@ runs/
 /screenshot_*.jpg
 /results/
 
+# Large generated visualisations (multi-MB image grids; regenerate with
+# python -m src.eval.analyze_errors)
+artifacts/reports/fn_visualization.png
+artifacts/reports/fp_visualization.png
+
 # Delivery bundle (regenerated after the project is finalized)
 /高精度人脸检测/
 /高精度人脸检测.zip

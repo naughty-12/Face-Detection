@@ -4,15 +4,23 @@ import json
 import numpy as np
 from ultralytics import YOLO
 
-from src.paths import ANNO_DIR, CHECKPOINT_DIR, PROJECT_ROOT, REPORTS_DIR, VAL_LIST, WIDER_YAML
+from src.paths import ANNO_DIR, CHECKPOINT_DIR, REPORTS_DIR, VAL_LIST, WIDER_YAML
 
 
-def evaluate_widerface(model_path):
-    """Evaluate model on WIDER Face val set. Falls back to ultralytics built-in val."""
+def evaluate_widerface(model_path, plots=True):
+    """Evaluate on the WIDER Face val set; return ``(metrics, run_dir)``.
+
+    The run directory is returned so the P-R curve can be copied straight out of this
+    same validation run. The old implementation ran a *second* full validation pass
+    purely to obtain that plot, and then looked for ``PR_curve.png`` -- a filename
+    current ultralytics does not write for detection (it writes ``BoxPR_curve.png``),
+    so the curve was silently never saved despite the function appearing to succeed.
+    """
     model = YOLO(model_path)
     data_yaml = WIDER_YAML
 
-    results = model.val(data=data_yaml, split="val", batch=8, imgsz=640, verbose=True)
+    results = model.val(data=data_yaml, split="val", batch=8, imgsz=640,
+                        verbose=True, plots=plots)
 
     metrics = {
         "mAP50": float(results.box.map50),
@@ -38,7 +46,7 @@ def evaluate_widerface(model_path):
         metrics["medium_mAP"] = None
         metrics["hard_mAP"] = None
 
-    return metrics
+    return metrics, str(results.save_dir)
 
 
 def generate_predictions(model_path, output_dir):
@@ -69,23 +77,23 @@ def generate_predictions(model_path, output_dir):
                 f.write(f"{img_name}\n0\n")
 
 
-def plot_pr_curve(model_path, save_path=None):
-    """Generate P-R curve using ultralytics built-in plotting"""
-    model = YOLO(model_path)
-    data_yaml = WIDER_YAML
+def copy_pr_curve(run_dir, save_path):
+    """Copy the precision-recall curve out of an already completed validation run.
 
-    results = model.val(data=data_yaml, split="val", batch=8, imgsz=640, plots=True)
+    ultralytics writes ``BoxPR_curve.png`` for detection tasks; older releases used
+    ``PR_curve.png``. Both are tried, and a miss is reported instead of being swallowed
+    by a bare ``if os.path.exists(...)`` with no else branch.
+    """
+    import shutil
 
-    if save_path:
-        import shutil
-        import glob
-        run_dirs = sorted(glob.glob(os.path.join(PROJECT_ROOT, "runs", "detect", "val*")),
-                          key=os.path.getmtime, reverse=True)
-        if run_dirs:
-            pr_src = os.path.join(run_dirs[0], "PR_curve.png")
-            if os.path.exists(pr_src):
-                shutil.copy(pr_src, save_path)
-                print(f"P-R curve saved to {save_path}")
+    for name in ("BoxPR_curve.png", "PR_curve.png"):
+        src = os.path.join(run_dir, name)
+        if os.path.exists(src):
+            shutil.copy(src, save_path)
+            print(f"P-R curve saved to {save_path}  (from {name})")
+            return True
+    print(f"[WARN] No P-R curve found in {run_dir}; nothing saved to {save_path}.")
+    return False
 
 
 def save_metrics(metrics, output_path):
@@ -104,18 +112,18 @@ def main():
     print("=" * 60)
     print("Evaluating v1 baseline model ...")
     print("=" * 60)
-    v1_metrics = evaluate_widerface(v1_path)
+    v1_metrics, v1_run = evaluate_widerface(v1_path)
     save_metrics(v1_metrics, os.path.join(REPORTS_DIR, "metrics_v1.json"))
 
     print("\n" + "=" * 60)
     print("Evaluating v2 fine-tuned model ...")
     print("=" * 60)
-    v2_metrics = evaluate_widerface(v2_path)
+    v2_metrics, v2_run = evaluate_widerface(v2_path)
     save_metrics(v2_metrics, os.path.join(REPORTS_DIR, "metrics_v2.json"))
 
-    print("\nGenerating P-R curves ...")
-    plot_pr_curve(v1_path, save_path=os.path.join(REPORTS_DIR, "pr_curve_v1.png"))
-    plot_pr_curve(v2_path, save_path=os.path.join(REPORTS_DIR, "pr_curve_v2.png"))
+    print("\nCopying P-R curves from the validation runs ...")
+    copy_pr_curve(v1_run, os.path.join(REPORTS_DIR, "pr_curve_v1.png"))
+    copy_pr_curve(v2_run, os.path.join(REPORTS_DIR, "pr_curve_v2.png"))
 
     print("\n" + "=" * 60)
     print("Evaluation Summary")
