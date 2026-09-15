@@ -100,6 +100,24 @@
   无法安装 `onnxruntime-gpu`），因此 ONNX 比 PyTorch/CUDA 慢 **2.4–3.3 倍**。
 - 为 v1/v2 保存的 best 权重重新测得 mAP，取代此前引用的训练日志末行（最后 epoch）数字。
 
+### 性能
+
+- **VTube Studio 桥接默认模型由 `.onnx` 改为 `.pt`**。`onnxruntime` 在本机只暴露
+  `CPUExecutionProvider`，所以桥接此前一直在**CPU 上做 YOLO 推理（中位 24.8 ms）而 GPU 闲置**。
+  改为 `.pt` 后走 CUDA 并自动启用 FP16。无头验证：`device=0`、`format=PyTorch`、`use_half=True`、检出 8 张人脸。
+- **实测确认 FP16 默认值正确**（交替 A/B，5 轮 × 15 样本，同进程）：
+  `half=True` 中位 **12.52 ms / 79.9 FPS**，`half=False` 中位 **13.52 ms / 73.9 FPS**，FP16 快 **7.4%**。
+
+### 测量方法
+
+- **发现本机测量噪声约为 ±50%**：同一调用跨度达 **4.8 – 18.8 ms**（约 3 倍）。
+  本会话中所有"同一数字对不上"的现象都源于此，而非代码或环境变化。
+- `src/deploy/benchmark.py` 因此不再只报一个平均值，改为输出
+  **中位数 + 最小值 / p95 / 最大值 + 样本数**，并在开头说明原因。
+  最新中位结果：PyTorch **10.31 ms / 97.0 FPS**，ONNX **24.80 ms / 40.3 FPS（CPU）**；
+  体积检查随 FP16 生效而重新 **PASS**（`≤10MB`），此前 FP32 为 11.70 MiB 属 **FAIL**。
+- 结论：**任何单次读数不可作为结论**，引用速度必须注明测量次数与统计量。
+
 ### 修复
 
 - `split.py` 解析 WIDER 标注时崩溃（`num_faces=0` 的假框行未跳过），导致 `train_list.txt` /
