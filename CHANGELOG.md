@@ -218,3 +218,28 @@ setuptools 下构建。
 
 把"三种导出变体的 mAP 与吞吐对比"固化为可复用脚本（原先是一次性探针），
 其结论已写入 README 与《决策记录》。
+
+### 变更：Albumentations 管线的定位（G12，采用方案 B）
+
+`src/data/augment.py` 从未进入训练，只被 `vis_aug.py` 引用。经评估**不接入训练**，定位为
+**增强可视化工具**并写入文件头说明。理由：
+
+- 其全部变换已被 ultralytics 内置增强覆盖（`fliplr` / `hsv_*` / `randaugment` 含模糊 /
+  `erasing` 即 Cutout / letterbox）；
+- 且**缺 Mosaic**（ultralytics 在检测上最有价值的增强）→ **替换会严格变差，叠加会让翻转与
+  HSV 双重施加**。
+
+顺带纠正：设计文档承诺的"后 50 epoch 加 Cutout/模糊"**其实早已被 ultralytics 默认值满足**。
+
+**若将来要做数据侧提召回，重点是两条**（已写入 `docs/项目现状与差距.md` 第八节）：
+
+1. **属性感知增强** —— 用 WIDER 标注自带的脸级 `blur` / `illumination` / `occlusion` / `pose`
+   属性做定向增强；ultralytics 看不到这些字段（对应 G14）。依据：≥32px 人脸召回已达 0.916，
+   剩余失误集中在困难子集。
+2. **小脸放大裁剪** —— 随机裁出含小人脸的区域放大到 640。依据：72.5% 的 GT 人脸 <32px、召回 0.493。
+
+真实成本：关闭重叠变换、自行实现 Mosaic、打通 ultralytics 的 Dataset / Transform 层。
+**第一步应是补训练数据路径的测试**，而非直接改 `augment.py`。
+
+文档同步：README、`docs/架构说明.md`、`docs/项目现状与差距.md`（新增第八节）、
+`.dsh-dev/decisions.md`。

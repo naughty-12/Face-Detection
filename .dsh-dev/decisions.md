@@ -4,7 +4,63 @@
 
 ---
 
-## 2026-09-15 ONNX 导出的精度与体积取舍（用实测裁定）
+## 2026-09-15 Albumentations 增强管线的定位（方案 B：不接入训练）
+
+### 背景
+
+`src/data/augment.py` 定义了 early/late 两套 Albumentations 增强管线，但**从未进入训练** ——
+只被 `src/data/vis_aug.py` 引用。设计文档承诺的"后 50 epoch 加 Cutout/模糊"因此看起来没做。
+G12 要回答：接入、删除，还是保持现状？
+
+### 候选方案
+
+| 方案 | 做法 | 评价 |
+|:---|:---|:---|
+| A. 删除 | 清掉"文档写了、代码没用"的落差 | 会失去现成的增强可视化工具 |
+| **B. 保留但明确定位为可视化工具（选定）** | 文件头写清定位与原因，文档同步 | 零风险，且纠正文档落差 |
+| C. 真正接入训练 | 自定义 Dataset + trainer 钩子 | 投入大、**当前收益为负** |
+
+### 选定 B 的理由
+
+**该管线的全部变换都已被 ultralytics 内置增强覆盖**：`HorizontalFlip`↔`fliplr`、
+`RandomBrightnessContrast`/`HueSaturationValue`↔`hsv_v`/`hsv_h`/`hsv_s`、`Blur`↔`randaugment`
+（含模糊）、`CoarseDropout`↔`erasing`、`Resize`↔letterbox。而且它**缺 Mosaic**（ultralytics 在
+检测任务上最有价值的增强）。因此：
+
+- **替换** ultralytics 的增强 → 丢掉 Mosaic，严格变差；
+- **叠加** → 翻转与 HSV 被施加两次、概率失准。
+
+顺带纠正一个认知：设计文档承诺的"后 50 epoch 加 Cutout/模糊"**其实早已被 ultralytics 的默认值满足**。
+
+### C 若要做，重点是什么（已写入优化方向）
+
+收益不在"多几种标准增强"，而在 ultralytics 做不到的两件事，各自对应一个**已实测的短板**：
+
+1. **属性感知增强** —— 用 WIDER 标注自带的脸级属性（`blur` / `illumination` / `occlusion` / `pose`）
+   做定向增强；ultralytics 看不到这些字段（G14）。依据：≥32px 人脸的召回已达 **0.916**，
+   剩余失误集中在困难子集，而困难程度**标注里就有**。
+2. **小脸放大裁剪** —— 随机裁出含小人脸的区域并放大到 640。依据：**72.5% 的 GT 人脸 <32px，
+   其召回仅 0.493**。
+
+真实成本（不是换一个 `Compose` 就能接上）：① 关闭 ultralytics 中重叠的变换以免双重施加；
+② 自行实现 Mosaic；③ 打通 ultralytics 的 Dataset / Transform 层。
+
+### 现在不做的理由
+
+1. **顺序不对**：应先确定"加哪种定向增强"，再选**载体**（Albumentations 或 ultralytics 自定义 Dataset）。
+2. **收益尚未被证明**：两条都还是假设，需先做小规模前置实验（如"小脸放大裁剪"跑 10 epoch
+   对比 <32px 召回）。
+3. **瓶颈可能在分辨率侧**：<32px 的脸在 640 输入下不足 10px，提高分辨率可能是成本更低的同方向解法。
+4. **风险**：会改变训练数据分布，使既有 `best_model_v2.pt` 失去可比性；且 56 个测试
+   **不覆盖训练数据路径**。
+
+**若将来启动：第一步不是改 `augment.py`，而是补训练数据路径的测试**（自定义 Dataset 的变换
+正确性、框与图同步性），否则改错不会有人发现。
+
+### 结果
+
+`src/data/augment.py` 头部写入定位说明；README、`docs/架构说明.md`、
+`docs/项目现状与差距.md` 第八节与 CHANGELOG 同步。
 
 ### 背景
 
