@@ -1,6 +1,6 @@
 Size-stratified detection analysis
 ==========================================================================
-model:    C:\学习\高精度人脸检查算法\artifacts\checkpoints\best_model_v2.pt
+model:    artifacts/checkpoints/best_model_v2.pt
 images:   3226
 GT faces: 39708   matched: 24203   missed: 15505
 preds:    29785   spurious: 5582
