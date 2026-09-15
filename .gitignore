@@ -41,6 +41,10 @@ artifacts/reports/fp_visualization.png
 .DS_Store
 .claude/settings.local.json
 
+# Unit-test scratch directories
+/.facetest_tmp_*/
+/.facetest_*/
+
 # Generated reports (not source code)
 *.doc
 *.docx

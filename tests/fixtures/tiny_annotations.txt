@@ -1,0 +1,10 @@
+0--Parade/0_Parade_marchingband_1_849.jpg
+1
+449 330 122 149 0 0 0 0 0 0
+0--Parade/0_Parade_marchingband_1_100.jpg
+0
+0 0 0 0 0 0 0 0 0 0
+1--Handshaking/1_Handshaking_Handshaking_1_100.jpg
+2
+10 20 30 40 0 0 0 0 0 0
+50 60 70 80 1 0 0 0 2

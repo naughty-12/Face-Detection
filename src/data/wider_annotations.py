@@ -25,17 +25,13 @@ import os
 _DUMMY_TOKENS = 10
 
 
-def parse_samples(anno_file):
-    """Yield ``(image_name, [[x, y, w, h], ...])`` for every entry in ``anno_file``.
+def parse_lines(lines):
+    """Yield ``(image_name, boxes)`` from an iterable of raw annotation lines.
 
-    ``image_name`` is the raw relative path as written in the annotation file.
-    No filesystem checks are performed here -- callers add those as needed.
+    Kept separate from file access so the parsing rules -- above all the zero-face dummy
+    line -- can be exercised without touching the filesystem.
     """
-    if not os.path.exists(anno_file):
-        raise FileNotFoundError(f"WIDER annotation file not found: {anno_file}")
-
-    with open(anno_file, "r", encoding="utf-8", errors="replace") as f:
-        lines = [line.strip() for line in f]
+    lines = [line.strip() for line in lines]
 
     i = 0
     total = len(lines)
@@ -44,6 +40,13 @@ def parse_samples(anno_file):
         i += 1
         if not image_name:
             continue
+        if i >= total:
+            break
+
+        # Blank lines are tolerated anywhere between records, including between an
+        # image path and its face count -- the module docstring promises this.
+        while i < total and not lines[i]:
+            i += 1
         if i >= total:
             break
 
@@ -58,6 +61,8 @@ def parse_samples(anno_file):
 
         boxes = []
         for _ in range(num_faces):
+            while i < total and not lines[i]:
+                i += 1
             if i >= total:
                 break
             parts = lines[i].split()
@@ -73,6 +78,21 @@ def parse_samples(anno_file):
                 i += 1
 
         yield image_name, boxes
+
+
+def parse_samples(anno_file):
+    """Yield ``(image_name, [[x, y, w, h], ...])`` for every entry in ``anno_file``.
+
+    ``image_name`` is the raw relative path as written in the annotation file.
+    No filesystem checks on the images are performed here -- callers add those as needed.
+    """
+    if not os.path.exists(anno_file):
+        raise FileNotFoundError(f"WIDER annotation file not found: {anno_file}")
+    # Read fully before delegating: parse_lines is a generator, so returning it from
+    # inside the `with` would hand back a generator whose file is already closed.
+    with open(anno_file, "r", encoding="utf-8", errors="replace") as f:
+        lines = f.readlines()
+    return parse_lines(lines)
 
 
 def parse_samples_with_image_root(anno_file, image_root):
