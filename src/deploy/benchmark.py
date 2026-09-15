@@ -33,10 +33,13 @@ def benchmark_pytorch(model_path, num_warmup=50, num_test=200):
         t1 = time.perf_counter()
         times.append((t1 - t0) * 1000)
 
-    avg_latency = np.mean(times)
-    fps = 1000.0 / avg_latency
-    print(f"PyTorch:  avg latency = {avg_latency:.2f} ms, FPS = {fps:.1f}")
-    return fps, avg_latency
+    times = np.asarray(times)
+    med = float(np.median(times))
+    fps = 1000.0 / med
+    print(f"PyTorch:  median {med:.2f} ms  {fps:.1f} FPS   "
+          f"(min {times.min():.2f}, p95 {np.percentile(times, 95):.2f}, "
+          f"max {times.max():.2f}, n={len(times)})")
+    return fps, med
 
 
 def benchmark_onnx(onnx_path, num_warmup=50, num_test=200):
@@ -65,10 +68,13 @@ def benchmark_onnx(onnx_path, num_warmup=50, num_test=200):
         t1 = time.perf_counter()
         times.append((t1 - t0) * 1000)
 
-    avg_latency = np.mean(times)
-    fps = 1000.0 / avg_latency
-    print(f"ONNX:     avg latency = {avg_latency:.2f} ms, FPS = {fps:.1f}")
-    return fps, avg_latency
+    times = np.asarray(times)
+    med = float(np.median(times))
+    fps = 1000.0 / med
+    print(f"ONNX:     median {med:.2f} ms  {fps:.1f} FPS   "
+          f"(min {times.min():.2f}, p95 {np.percentile(times, 95):.2f}, "
+          f"max {times.max():.2f}, n={len(times)})")
+    return fps, med
 
 
 def main():
@@ -78,6 +84,9 @@ def main():
     print("=" * 60)
     print("SCOPE: network forward pass only -- no letterbox preprocessing, no")
     print("       decode, no NMS. These are NOT end-to-end pipeline figures.")
+    print("NOTE: per-run latency on this machine spans roughly 6-19 ms for the same")
+    print("      call (thermal/clock state), so a single average is meaningless --")
+    print("      results are reported as median with the observed spread.")
 
     v2_pt = os.path.join(CHECKPOINT_DIR, "best_model_v2.pt")
     v2_onnx = os.path.join(CHECKPOINT_DIR, "best_model_v2.onnx")
@@ -98,8 +107,8 @@ def main():
     print("=" * 60)
     print(f"  PyTorch FPS:        {pt_fps:.1f}")
     print(f"  ONNX Runtime FPS:   {onnx_fps:.1f}")
-    print(f"  PyTorch Latency:    {pt_latency:.2f} ms")
-    print(f"  ONNX Latency:       {onnx_latency:.2f} ms")
+    print(f"  PyTorch median lat: {pt_latency:.2f} ms")
+    print(f"  ONNX median lat:    {onnx_latency:.2f} ms")
     print(f"  PyTorch Model Size: {pt_size:.2f} MB")
     print(f"  ONNX Model Size:    {onnx_size:.2f} MB")
     fps_ok = onnx_fps >= 30

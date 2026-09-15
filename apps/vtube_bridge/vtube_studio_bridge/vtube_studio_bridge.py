@@ -37,7 +37,11 @@ from thirdparty.MediaPipe.face_landmarker import estimate_eye_gaze as estimate_m
 from thirdparty.MediaPipe.face_landmarker import estimate_expressions as estimate_mediapipe_expressions
 
 
-DEFAULT_MODEL = PROJECT_ROOT / "artifacts" / "checkpoints" / "best_model_v2.onnx"
+# PyTorch weights are the default. On this machine onnxruntime exposes no CUDA provider,
+# so an .onnx model would silently run on the CPU (~2.4-3.3x slower, measured) while the
+# GPU sat idle. A .pt model takes the CUDA path and also enables FP16 inference below.
+# Pass --model <...>.onnx to use ONNX Runtime explicitly (useful where PyTorch is absent).
+DEFAULT_MODEL = PROJECT_ROOT / "artifacts" / "checkpoints" / "best_model_v2.pt"
 DEFAULT_MEDIAPIPE_MODEL = BRIDGE_ROOT / "thirdparty" / "MediaPipe" / "models" / "face_landmarker.task"
 PLUGIN_NAME = "Face Detection VTube Studio Bridge"
 PLUGIN_DEVELOPER = "Face-Detection Project"
@@ -1326,7 +1330,8 @@ def parse_args():
     parser.add_argument("--input", type=int, default=0, help="Camera index.")
     parser.add_argument("--vtshost", type=str, default="127.0.0.1", help="VTube Studio API host.")
     parser.add_argument("--vtsport", type=int, default=8001, help="VTube Studio API port.")
-    parser.add_argument("--model", type=str, default=str(DEFAULT_MODEL), help="Path to YOLO .pt or .onnx model.")
+    parser.add_argument("--model", type=str, default=str(DEFAULT_MODEL),
+                        help="Path to a YOLO .pt model (CUDA, default) or .onnx (CPU-only here).")
     parser.add_argument("--imgsz", type=int, default=640, help="YOLO inference image size.")
     parser.add_argument("--conf", type=float, default=0.25, help="YOLO confidence threshold.")
     parser.add_argument("--landmarks", action="store_true", help="Draw MediaPipe landmarks in debug preview.")
@@ -1344,7 +1349,8 @@ def parse_args():
     parser.add_argument("--expression-alpha", type=float, default=0.45, help="Expression EMA alpha, 0..1.")
     parser.add_argument("--head-pose-alpha", type=float, default=0.35, help="Head pose EMA alpha, 0..1.")
     parser.add_argument("--eye-gaze-alpha", type=float, default=0.35, help="Eye gaze EMA alpha, 0..1.")
-    parser.add_argument("--nohalf", action="store_true", help="Disable FP16 inference on CUDA.")
+    parser.add_argument("--nohalf", action="store_true",
+                        help="Disable FP16 inference on CUDA (applies to .pt models only).")
     return parser.parse_args()
 
 
