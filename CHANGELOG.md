@@ -261,3 +261,21 @@ setuptools 下构建。
 
 同时把 `widerface-evaluate` 标注为**可选依赖**并说明：项目实际汇报的指标不依赖它
 （缺失时 Easy/Medium/Hard 报 `null`，分项分析由按尺寸分层替代）。
+
+### 文档订正：定向增强的载体（`docs/项目现状与差距.md` 新增 8.5）
+
+查证 ultralytics 8.4.75 源码后，订正了此前两处判断：
+
+1. **载体不是"Albumentations vs 自定义 Dataset"**。`Albumentations` 是库；真实载体是
+   **`augmentations` 超参钩子**（`v8_transforms()` 已内插 `Albumentations(transforms=hyp.augmentations)`，
+   一行配置即可，且**会自动同步标注框**）与**自定义 Dataset**（数天级）。
+2. **"必须自行实现 Mosaic"是错的**：钩子运行在 Mosaic / affine / MixUp **之后**，Mosaic 原样保留。
+
+并记录了钩子的一个隐蔽陷阱：`contains_spatial` 靠**硬编码类名白名单**判断，**自定义变换类名不在表内
+→ 被当作纯像素变换 → 框静默不同步、标注被破坏**。
+
+据此给出两条定向增强与载体的对应：**属性感知增强必须走自定义 Dataset**（标注属性进不了钩子的
+`image + bboxes + class_labels` 通道，且需先补 G14 的属性解析）；**小脸放大裁剪可走配置级钩子**
+（用白名单内的 `BBoxSafeRandomCrop` + `LongestMaxSize`，无需自定义类）。
+
+推进顺序因此改为：**先用配置级钩子零代码验证小脸放大裁剪是否真能提升召回，有效再投入 Dataset 级改造。**

@@ -42,12 +42,13 @@ G12 要回答：接入、删除，还是保持现状？
 2. **小脸放大裁剪** —— 随机裁出含小人脸的区域并放大到 640。依据：**72.5% 的 GT 人脸 <32px，
    其召回仅 0.493**。
 
-真实成本（不是换一个 `Compose` 就能接上）：① 关闭 ultralytics 中重叠的变换以免双重施加；
-② 自行实现 Mosaic；③ 打通 ultralytics 的 Dataset / Transform 层。
+真实成本（**后续查证已大幅下调**，见本节末"载体订正"）：① 若挂入的变换与内置重叠，需关闭内置
+对应项以免双重施加（只挂不重叠的变换则无需）；~~② 自行实现 Mosaic~~ —— **不需要**，钩子运行在
+Mosaic 之后；③ 打通 ultralytics 的 Dataset / Transform 层（仅 ① 属性增强需要）。
 
 ### 现在不做的理由
 
-1. **顺序不对**：应先确定"加哪种定向增强"，再选**载体**（Albumentations 或 ultralytics 自定义 Dataset）。
+1. **顺序不对**：应先确定"加哪种定向增强"，再选**载体**（见下方"载体订正"）。
 2. **收益尚未被证明**：两条都还是假设，需先做小规模前置实验（如"小脸放大裁剪"跑 10 epoch
    对比 <32px 召回）。
 3. **瓶颈可能在分辨率侧**：<32px 的脸在 640 输入下不足 10px，提高分辨率可能是成本更低的同方向解法。
@@ -61,6 +62,25 @@ G12 要回答：接入、删除，还是保持现状？
 
 `src/data/augment.py` 头部写入定位说明；README、`docs/架构说明.md`、
 `docs/项目现状与差距.md` 第八节与 CHANGELOG 同步。
+
+### 载体订正（查证 ultralytics 8.4.75 源码后）
+
+原先的"Albumentations vs ultralytics 自定义 Dataset"二分是**错的** —— `Albumentations` 是库，不是载体。真实载体：
+
+| 载体 | 是什么 | 成本 |
+|:---|:---|:---|
+| **A. `augmentations` 超参钩子** | `v8_transforms()` 已内插 `Albumentations(transforms=hyp.augmentations)`，位于 **Mosaic/affine/MixUp 之后、RandomHSV/RandomFlip 之前**；`model.train(augmentations=[...])` 即可 | **一行配置** |
+| **B. 自定义 Dataset** | 写代码接管数据构建 | 数天级 |
+
+载体 A **会自动同步标注框**（几何变换时把 instances 转归一化 xywh 传入并写回）。
+⚠️ 但 `contains_spatial` 靠**硬编码类名白名单**判断 —— **自定义变换类名不在表内会被当作纯像素变换，
+导致框静默不同步、标注被破坏**。
+
+**两条定向增强的载体归属**：① 属性感知增强 → **必须走 B**（标注属性进不了钩子的
+`image + bboxes + class_labels` 通道，且需先补 G14 的属性解析）；
+② 小脸放大裁剪 → **可走 A**（用白名单内的 `BBoxSafeRandomCrop` + `LongestMaxSize`，无需自定义类）。
+
+**推进顺序因此改为**：先用载体 A 零代码验证 ② 是否真能提升小脸召回，有效再投入 ① 的 Dataset 级改造。
 
 ### 背景
 
