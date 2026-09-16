@@ -142,8 +142,13 @@ def estimate_expressions(blendshapes):
     if not blendshapes:
         return {}
 
-    eye_open_left = 1.0 - blendshape_score(blendshapes, "eyeBlinkLeft")
-    eye_open_right = 1.0 - blendshape_score(blendshapes, "eyeBlinkRight")
+    # ⚠️ 左右**交换**：MediaPipe 的 blendshape 名按"被拍者自身"命名（ARKit 习惯），
+    # 直接对应（使用者的左眼 → EyeOpenLeft → hiyori 的 ParamEyeLOpen = 模型自己的左眼）
+    # 在解剖学上一致，但使用者看到的是**另一侧的眼在眨** —— 实测 2026-09-16：
+    # "眨左眼反馈的是右眼眨"。期望是**镜像式**（面对你的形象应闭上与你同侧的那只眼），故交换。
+    # 回归测试：tests/test_eye_open_sides.py
+    eye_open_for_left_param = 1.0 - blendshape_score(blendshapes, "eyeBlinkRight")
+    eye_open_for_right_param = 1.0 - blendshape_score(blendshapes, "eyeBlinkLeft")
     mouth_open = max(
         blendshape_score(blendshapes, "jawOpen"),
         blendshape_score(blendshapes, "mouthFunnel"),
@@ -163,8 +168,8 @@ def estimate_expressions(blendshapes):
     )
 
     return {
-        "EyeOpenLeft": clamp(eye_open_left),
-        "EyeOpenRight": clamp(eye_open_right),
+        "EyeOpenLeft": clamp(eye_open_for_left_param),
+        "EyeOpenRight": clamp(eye_open_for_right_param),
         "MouthOpen": clamp(mouth_open),
         "MouthSmile": clamp(mouth_smile),
         "BrowLeftY": clamp(brow_left),
@@ -200,8 +205,12 @@ def estimate_angles(matrix):
         yaw = math.atan2(-rotation[2, 0], sy)
         roll = 0.0
 
+    # ⚠️ 方向由**实测目视**确定，不要凭几何推理改（2026-09-16）：
+    #   使用者反馈"**左右摇头方向相反**" → 这里对 yaw 取负。
+    #   pitch（点头）与 roll（歪头）从未被反馈为相反，保持原符号。
+    #   改这三个符号前请先读 tests/test_head_rotation_direction.py 的说明。
     return {
-        "FaceAngleX": float(math.degrees(yaw)),
+        "FaceAngleX": float(-math.degrees(yaw)),
         "FaceAngleY": float(-math.degrees(pitch)),
         "FaceAngleZ": float(math.degrees(roll)),
     }
@@ -231,11 +240,15 @@ def estimate_eye_gaze(landmarks):
     )
 
     # Webcam frames are not mirrored here: image-right corresponds to the user's left eye.
+    # ⚠️ 这里**不要**再对结果取反：`_estimate_single_eye_gaze` 返回的已经是影像坐标下的偏移
+    # （向右为正、向上为正）。四个值全取反会让视线**左右与上下都相反**。
+    # 实测（2026-09-16，使用者目视确认"只有眼睛是相反的"）→ 去掉取反后方向正确。
+    # 回归测试：tests/test_eye_gaze_direction.py
     return {
-        "EyeLeftX": -image_right["x"],
-        "EyeLeftY": -image_right["y"],
-        "EyeRightX": -image_left["x"],
-        "EyeRightY": -image_left["y"],
+        "EyeLeftX": image_right["x"],
+        "EyeLeftY": image_right["y"],
+        "EyeRightX": image_left["x"],
+        "EyeRightY": image_left["y"],
     }
 
 

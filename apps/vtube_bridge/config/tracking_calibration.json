@@ -1,0 +1,32 @@
+{
+  "version": 1,
+  "updatedAt": "2026-09-16T14:10:00+0800",
+  "cameraPreviewEnabled": true,
+  "parameters": {
+    "EyeOpenLeft": {
+      "center": 0.99,
+      "min": 0.3,
+      "max": 0.99
+    },
+    "EyeOpenRight": {
+      "center": 0.99,
+      "min": 0.32,
+      "max": 0.99
+    },
+    "FaceAngleX": {
+      "center": 0.0,
+      "min": -30.0,
+      "max": 30.0
+    },
+    "FaceAngleY": {
+      "center": 0.0,
+      "min": -30.0,
+      "max": 30.0
+    },
+    "FaceAngleZ": {
+      "center": 0.0,
+      "min": -65.0,
+      "max": 65.0
+    }
+  }
+}

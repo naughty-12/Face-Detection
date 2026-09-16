@@ -3,7 +3,17 @@ torch>=1.10.0
 torchvision>=0.11.0
 ultralytics>=8.0.0
 numpy>=1.19.0
-opencv-python>=4.5.0
+# OpenCV：**三个分发包共用同一个 site-packages/cv2/ 目录，最后安装者生效。**
+# 本机实测（2026-09-16）：三者并存，实际生效的是 opencv-contrib-python 5.0.0.93
+# （cv2.__version__ == "5.0.0"，而 pip show opencv-python 仍报 4.13.0.92）。
+# 原因：mediapipe 依赖 opencv-contrib-python、albumentations 依赖 opencv-python-headless，
+# 本文件原先只声明 opencv-python —— pip 会同时满足三方，但它们写的是同一份 cv2/。
+# 故此处改为声明**真正必需**的那一个（mediapipe 要的 contrib 版）。注意：
+# ⚠️ 绝不能让 opencv-python-headless 成为最后安装的那个：headless 没有
+# imshow / waitKey / destroyAllWindows / getWindowProperty / WND_PROP_VISIBLE，
+# 而 src/deploy/detect.py 用了它们，实时预览会直接崩，且报错指向 cv2.imshow 而非安装顺序。
+# 护栏：tests/test_opencv_environment.py（被 headless 覆盖时它会红，不会 skip 掉）。
+opencv-contrib-python>=4.5.0
 mediapipe>=0.10.0
 PyQt5>=5.15.0
 
