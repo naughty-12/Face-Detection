@@ -1,0 +1,34 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    C# 静态检查工程：用 UnityEngineStubs.cs 里的最小桩，检查 Unity 脚本的
+    语法 / 成员名 / 类型用法 / 语言版本兼容性。
+
+    它**不是** Unity 编译：桩是手写的，与真实 Unity API 有差异。
+    真正验收仍然是在 Unity 里打开工程看 Console。
+
+    用法（本目录）：
+        dotnet build
+  -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <AssemblyName>FaceLinkCompileCheck</AssemblyName>
+    <RootNamespace>FaceLink.CompileCheck</RootNamespace>
+    <!-- 对齐 Unity 2022.3 支持的 C# 版本，避免误用更新的语法 -->
+    <LangVersion>9.0</LangVersion>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <!-- 桩里的属性/字段没有赋值，会触发未使用警告；这些不是脚本的问题 -->
+    <NoWarn>CS0169;CS0414;CS0649;CS0067</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="UnityEngineStubs.cs" />
+    <Compile Include="../UnityProject/Assets/Scripts/FaceParamReceiver.cs" />
+    <Compile Include="../UnityProject/Assets/Scripts/FaceParamMapper.cs" />
+    <Compile Include="../UnityProject/Assets/Scripts/FaceParamHud.cs" />
+  </ItemGroup>
+
+</Project>
