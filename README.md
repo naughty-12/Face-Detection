@@ -251,7 +251,7 @@ python apps/vtube_bridge/main.py --input 7f62f96bca5cffdfe2e0167bf3de3169.mp4 --
 ```
 
 > `--no-gui` 必须带：**本机未安装 PyQt5**，不加这个开关桥接会因缺 Qt 直接报错退出。
-> （`requirements.txt` 里列了 PyQt5 作为可选依赖，但它只是内部调试面板用的，日常运行一律 `--no-gui`。）
+> （PyQt5 **不在依赖清单内** —— 它只服务于内部调试面板，而该面板在本机从未运行过；如需要请自行安装。）
 
 ### 4.4 三条出口各自的"不装任何东西"自检
 
@@ -659,11 +659,16 @@ python -m unittest discover -s tests -v
 ## 15. 技术栈
 
 Python 3.12 ｜ PyTorch 2.5 ｜ ultralytics 8.4 ｜ OpenCV 5.0（`cv2.__version__` 实测值）｜
-MediaPipe 0.10 ｜ Albumentations 2.0 ｜ ONNX Runtime 1.27（**本机无 CUDA provider**）｜
-websocket-client 1.8 ｜ scikit-learn ｜ Matplotlib ｜ TensorBoard ｜
+MediaPipe 1.0 ｜ ONNX Runtime 1.27（**本机无 CUDA provider**）｜
+websocket-client 1.9 ｜ Matplotlib ｜ TensorBoard ｜
 Unity 侧为 C#（仅静态检查，未在 Unity 中编译）
 
-> GUI 调试面板（PyQt5）是**可选项**，本机**未安装**，故所有命令一律带 `--no-gui`。
+> 上面只列**实际用到**的东西（版本为本机 `pip show` 实测值）。已从技术栈与 `requirements.txt` 中移除：
+> **PyQt5**（本机未安装、GUI 调试面板从未运行）、**scikit-learn**（全仓库从未 import）、
+> **onnx-simplifier**（从未 import）。**Albumentations** 不在技术栈里：它只用于增强效果可视化、
+> 不参与训练（见下方「已知限制」第 4 条）。
+>
+> GUI 调试面板（PyQt5）是**可选项**，需要自行安装（不在依赖清单内），故所有命令一律带 `--no-gui`。
 
 ---
 

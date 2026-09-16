@@ -1,3 +1,7 @@
+# 依赖清单原则：**只列实际用到的东西**（没用过的包不写在这里，免得被当成"项目技术栈"）。
+# 注：torchvision / pandas / tqdm 本项目代码未直接 import，但 ultralytics 运行时确实依赖它们
+# （NMS 算子、结果解析、训练进度条），故保留。
+#
 # 核心框架
 torch>=1.10.0
 torchvision>=0.11.0
@@ -15,7 +19,8 @@ numpy>=1.19.0
 # 护栏：tests/test_opencv_environment.py（被 headless 覆盖时它会红，不会 skip 掉）。
 opencv-contrib-python>=4.5.0
 mediapipe>=0.10.0
-PyQt5>=5.15.0
+# GUI 调试面板为**可选项**：需要自行安装 PyQt5（本机未安装，GUI 面板从未运行过），
+# 日常运行一律带 --no-gui。故不列入依赖清单 —— 清单里只放"实际用到"的东西。
 
 # 数据增强与处理
 # 需要 >=2.0：src/data/augment.py 使用 2.x 的 CoarseDropout 参数名。1.x 下参数名不同，
@@ -25,19 +30,20 @@ pandas>=1.2.0
 matplotlib>=3.3.0
 
 # 评估与指标
-scikit-learn>=0.24.0
 # WIDER Face 官方分项评测（**可选**）。
 # 项目实际汇报的指标不依赖它：src/eval/evaluate.py 用 ultralytics 自算 mAP，缺此包时把
 # Easy/Medium/Hard 报为 null（不再用 mAP50 冒充）；分项分析由 analyze_errors.py 与
 # conf_sweep.py 以"按尺寸分层"的方式覆盖。
 # 仍列在此处，是因为将来若能安装，官方 Easy/Medium/Hard 指标值得补齐。
 # 注意：安装需要网络，本机受限模式下不可达。
-widerface-evaluate>=0.1.0
+# ⚠️ 因此**默认注释掉** —— 它是可选包，留着会让 `pip install -r requirements.txt` 在这台机器上直接失败。
+# widerface-evaluate>=0.1.0
 
 # 模型导出与加速
+# onnx：本项目代码不直接 import，但 torch.onnx.export 需要它（导出链路依赖，故保留）。
+# onnx-simplifier 已移除 —— 全仓库从未 import（导出走 torch.onnx + onnxruntime 校验）。
 onnx>=1.10.0
 onnxruntime>=1.10.0
-onnx-simplifier>=0.3.0
 
 # 训练监控
 tensorboard>=2.5.0
