@@ -178,10 +178,12 @@ src/                        库代码（被导入，不直接运行）
     └── benchmark.py        性能基准
 
 apps/vtube_bridge/          VTube Studio 表情驱动（独立应用）
+apps/unity_link/            Unity 虚拟形象接收端（目标线：UDP 接收 + 假 Unity 与自检工具）
+apps/vmc_link/              VMC/OSC 速通线（VSeeFace 方向：监听器 + 自检 + OSC 解码）
 data/                       数据集（raw/ 与 annotations/）
 artifacts/                  产出（checkpoints/ 权重与曲线，reports/ 图表，logs/ 日志）
-docs/                       现状文档；archive/ 历史文档；plans/ 工作计划
-tests/                      测试（待填充）
+docs/                       开发过程文档（**不随仓库发布**）
+tests/                      单元测试（155 个用例，unittest）
 ```
 
 ---
@@ -275,6 +277,23 @@ VTube Studio → Live2D 形象跟随表情
 常用参数见 `python apps/vtube_bridge/main.py --help`（16 个可调参数：平滑系数、滤波窗口、
 保持帧数、发送频率、MediaPipe 裁剪比例等）。
 
+### 实测状态（2026-09-16，本机）
+
+| 项 | 实测结果 |
+|:---|:---|
+| 端到端 | ✅ `摄像头 → 桥接 → VTube Studio 插件 API（WebSocket）→ Live2D 形象` 已跑通；模型 **127 个输入参数中所需 16 个全部存在**（已用 `InputParameterListRequest` 核对） |
+| 跟随项 | ✅ 张嘴 / 眨眼（左右可分辨）/ 三轴转头 / 眼球视线 —— 均由使用者目视复验确认 |
+| **连续稳定性** | ✅ **连续 599.7 s（10 分钟）：19/19 个 30 秒窗口均有参数在变化，掉线 / 采样失败 / 采样中断 / VTS 重启全部为 0** |
+| 管线帧率 | **29.3 帧/秒** —— 经 12 组「后端 × 分辨率 × 帧率 × FOURCC」实测确认**已是内置摄像头 30 帧/秒的硬上限**（管线自身算力约 16 ms/帧 ≈ 59 帧/秒 有余量，即瓶颈在摄像头不在算法） |
+| 未做 | **端到端延迟未实测**（缺同步外部刺激，故不给毫秒数）；**未录演示视频** |
+
+稳定性验收可复现：`python apps/vtube_bridge/sample_vts_params.py`
+（默认采 600 秒，原始 CSV **边采边写**，输出 CSV + JSON 判据结论 + 报告，退出码 0 = 通过 / 2 = 未通过）。
+
+> 判据要求**每个 30 秒窗口至少有一个参数在变化**，而不只是"连接没掉线" ——
+> 同一判据下另一次同长度运行连接侧零掉线，但人不在镜头前时后 8 分钟参数全无变化，被判为不通过。
+> 只看连接状态会把它误判成"稳定运行 10 分钟"。
+
 ---
 
 ## 已知限制与未完成项
@@ -284,11 +303,12 @@ VTube Studio → Live2D 形象跟随表情
 | WIDER 分项评估 | 官方 Easy/Medium/Hard 需要 `widerface-evaluate` 包，**本机网络不可用、装不上**，原始 0.76 目标无法对账。已有替代：按人脸尺寸分层的召回表（见上方） |
 | 小脸召回 | 汇总召回 0.610，其中 **72.5% 的 GT 人脸 <32px、召回仅 0.493**；≥32px 人脸召回 0.916。**conf 扫描已完成**：默认 0.25 已接近最优 F1，阈值不是瓶颈（见上方阈值表） |
 | v2 无增益 | 与 v1 基本持平（mAP50 −0.001，mAP50-95 +0.0007），缺困难样本回流 |
-| 增强模块定位 | `src/data/augment.py` **仅用于增强可视化，不参与训练**（其变换已被 ultralytics 内置覆盖，且缺 Mosaic）。若要走数据侧提升小脸召回，方向是**属性感知增强**与**小脸放大裁剪** —— 见 [`docs/项目现状与差距.md`](docs/项目现状与差距.md) 第八节 |
+| 增强模块定位 | `src/data/augment.py` **仅用于增强可视化，不参与训练**（其变换已被 ultralytics 内置覆盖，且缺 Mosaic）。若要走数据侧提升小脸召回，方向是**属性感知增强**与**小脸放大裁剪**（后者已做小规模 A/B：收益 +0.004 mAP、代价精确率 −0.043，**判定不值得**，详见 `src/train/probe_aug_crop.py`） |
 | 自采数据缺失 | 设计中的 500 张侧脸/遮挡/暗光数据未采集 |
 | 训练吞吐 | 已实测并修复：6 GB 显存下 `batch=8` 峰值保留 **6.18 GiB** 超上限，**配置已改为 `batch=6`**（4.41 GiB）。**尚未用新 batch 重训验证** |
 | **测量噪声** | 同一调用实测跨度 **4.8–18.8 ms（约 3 倍）**，单次平均值无意义。`src/deploy/benchmark.py` 已改为报告中位数与分布 |
-| 测试覆盖有限 | `tests/` 有 **56 个测试**覆盖 WIDER 解析、坐标转换、匹配几何，以及桥接的时序滤波（EMA/中值/hold/reset）与位置映射（`unittest`，零依赖）；**模型 IO、训练全流程仍无覆盖** |
+| 测试覆盖有限 | `tests/` 有 **155 个测试**覆盖 WIDER 解析、坐标转换、匹配几何、桥接的时序滤波（EMA/中值/hold/reset）与位置映射、摄像头采集参数、稳定性验收判据（`unittest`，零依赖）；**模型 IO、训练全流程仍无覆盖** |
+| **虚拟形象驱动的两项缺口** | ① **端到端延迟未实测**（缺同步外部刺激）—— 故本仓库不给延迟毫秒数，只给"管线算力约 16 ms/帧 + 摄像头帧周期 33 ms"；② **无演示视频**，验收证据改为可复算的数字证据包（`apps/vtube_bridge/sample_vts_params.py` 产出的原始 CSV + 判据结论 + 回归测试） |
 | 死配置键 | `configs/model.yaml` 的 `accumulation_steps`、`multi_scale`、`architecture` 从未被代码读取 |
 
 ### 运行方式建议（本机实测）
@@ -303,20 +323,20 @@ VTube Studio → Live2D 形象跟随表情
 
 ## 技术栈
 
-Python 3.12 | PyTorch 2.5 | ultralytics 8.4 | OpenCV 4.13 | MediaPipe 0.10 |
-Albumentations 2.0 | ONNX Runtime 1.27 | PyQt5 5.15 | websocket-client 1.8 |
-scikit-learn | Matplotlib | TensorBoard
+Python 3.12 | PyTorch 2.5 | ultralytics 8.4 | OpenCV 5.0（`cv2.__version__` 实测值；pip 三个分发包共用同一
+`cv2/` 目录、最后安装者生效，已加护栏测试）| MediaPipe 0.10 |
+Albumentations 2.0 | ONNX Runtime 1.27 | websocket-client 1.8 | scikit-learn | Matplotlib | TensorBoard
+
+> GUI 调试面板是可选项（需自装 PyQt5，本机**未安装**，故一律用 `--no-gui` 运行）。
 
 ---
 
 ## 文档
 
-| 文档 | 内容 |
-|:---|:---|
-| [`docs/架构说明.md`](docs/架构说明.md) | 模块划分、数据流、依赖关系与设计取舍 |
-| [`docs/项目现状与差距.md`](docs/项目现状与差距.md) | 实现与设计承诺的逐条差距（含证据） |
-| [`docs/使用指南.md`](docs/使用指南.md) | 面向使用者的完整操作说明与 FAQ |
-| [`docs/面试讲解提纲.md`](docs/面试讲解提纲.md) | 讲解流程与预设问答 |
-| [`docs/简历项目经历.md`](docs/简历项目经历.md) | 简历稿（游戏客户端方向），含皮套跑通前后的两版措辞与禁止写清单 |
-| [`CHANGELOG.md`](CHANGELOG.md) | 变更记录 |
-| [`docs/archive/`](docs/archive/README.md) | 历史设计文档（**描述的是当初的目标，不是现状**） |
+**本仓库只发布本 README 作为说明文档**（外加 `.gitignore` 与依赖清单）。开发过程中的设计文档、
+变更记录、决策与失误记录、验收证据等**不随仓库发布**；可对外复核的内容已集中写在本 README 内：
+指标与口径、已知限制与未完成项、VTube Studio 驱动的实测状态与被否决的结论。
+
+仓库里的脚本就是"文档来源"：上面每个数字都能用仓库内代码重跑复现 —— 例如稳定性数据由
+`apps/vtube_bridge/sample_vts_params.py` 产出（原始 CSV 落盘，可自行重算），
+摄像头帧率上限由 `apps/vtube_bridge/probe_camera.py` 产出。

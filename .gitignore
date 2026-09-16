@@ -4,6 +4,10 @@ __pycache__/
 *.pyo
 _wheels/
 
+# C# static-check build output (see apps/unity_link/CompileCheck/check.ps1)
+apps/unity_link/CompileCheck/bin/
+apps/unity_link/CompileCheck/obj/
+
 # Model weights — only ship best deployment models
 *.pt
 !artifacts/checkpoints/best_model_v1.pt
