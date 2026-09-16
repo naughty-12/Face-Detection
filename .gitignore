@@ -48,6 +48,14 @@ artifacts/reports/fp_visualization.png
 # Unit-test scratch directories
 /.facetest_tmp_*/
 /.facetest_*/
+/facetest_*/
+/_wtest_*/
+artifacts/diag/_wtest_*/
+
+# Live-camera captures: the raw frame and the face crop contain the person sitting
+# at the camera. Diagnostic only, never evidence -- keep them out of the repository.
+artifacts/diag/camera_frame.png
+artifacts/diag/bridge_crop.png
 
 # Generated reports (not source code)
 *.doc

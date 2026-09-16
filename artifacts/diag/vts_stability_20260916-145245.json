@@ -1,0 +1,354 @@
+{
+  "generated_at": "2026-09-16 15:02:49",
+  "criterion": {
+    "connectedPlugins_at_least": 2,
+    "note": "connectedPlugins counts live VTS API sessions including this sampler; 1 = sampler alone (bridge not attached yet, NOT a disconnect)"
+  },
+  "settings": {
+    "duration": 600.0,
+    "interval": 0.2,
+    "stats_interval": 1.0,
+    "window": 30.0,
+    "epsilon": 0.02,
+    "min_changed_params": 1,
+    "required_stable": 300.0,
+    "other_plugins": 1,
+    "parameters": [
+      "MouthOpen",
+      "FaceAngleX",
+      "FaceAngleY",
+      "EyeOpenLeft",
+      "EyeLeftX"
+    ],
+    "host": "127.0.0.1",
+    "port": 8001,
+    "max_gap_seconds": 2.0
+  },
+  "samples": 2090,
+  "raw_csv": "artifacts\\diag\\vts_stability_20260916-145245.csv",
+  "verdict": {
+    "attached": true,
+    "attached_at": 0.0,
+    "last_attached_at": 599.906,
+    "stable_seconds": 599.906,
+    "total_attached_seconds": 599.906,
+    "required_seconds": 300.0,
+    "disconnects": [],
+    "sample_errors": [],
+    "vts_restarts": [],
+    "sampling_gaps": [],
+    "windows": [
+      {
+        "index": 0,
+        "start": 0.0,
+        "end": 30.0,
+        "spans": {
+          "EyeLeftX": 0.2159,
+          "EyeOpenLeft": 0.958,
+          "FaceAngleX": 32.0407,
+          "FaceAngleY": 19.7007,
+          "MouthOpen": 0.4203
+        },
+        "changed": [
+          "EyeLeftX",
+          "EyeOpenLeft",
+          "FaceAngleX",
+          "FaceAngleY",
+          "MouthOpen"
+        ],
+        "ok": true
+      },
+      {
+        "index": 1,
+        "start": 30.0,
+        "end": 60.0,
+        "spans": {
+          "EyeLeftX": 0.5992,
+          "EyeOpenLeft": 1.0,
+          "FaceAngleX": 27.5102,
+          "FaceAngleY": 33.7411,
+          "MouthOpen": 0.5623
+        },
+        "changed": [
+          "EyeLeftX",
+          "EyeOpenLeft",
+          "FaceAngleX",
+          "FaceAngleY",
+          "MouthOpen"
+        ],
+        "ok": true
+      },
+      {
+        "index": 2,
+        "start": 60.0,
+        "end": 90.0,
+        "spans": {
+          "EyeLeftX": 0.2581,
+          "EyeOpenLeft": 0.9318,
+          "FaceAngleX": 19.988,
+          "FaceAngleY": 19.798,
+          "MouthOpen": 0.1822
+        },
+        "changed": [
+          "EyeLeftX",
+          "EyeOpenLeft",
+          "FaceAngleX",
+          "FaceAngleY",
+          "MouthOpen"
+        ],
+        "ok": true
+      },
+      {
+        "index": 3,
+        "start": 90.0,
+        "end": 120.0,
+        "spans": {
+          "EyeLeftX": 0.2758,
+          "EyeOpenLeft": 0.7764,
+          "FaceAngleX": 24.1844,
+          "FaceAngleY": 14.9049,
+          "MouthOpen": 0.4159
+        },
+        "changed": [
+          "EyeLeftX",
+          "EyeOpenLeft",
+          "FaceAngleX",
+          "FaceAngleY",
+          "MouthOpen"
+        ],
+        "ok": true
+      },
+      {
+        "index": 4,
+        "start": 120.0,
+        "end": 150.0,
+        "spans": {
+          "EyeLeftX": 0.0,
+          "EyeOpenLeft": 0.0,
+          "FaceAngleX": 0.0,
+          "FaceAngleY": 0.0,
+          "MouthOpen": 0.0
+        },
+        "changed": [],
+        "ok": false
+      },
+      {
+        "index": 5,
+        "start": 150.0,
+        "end": 180.0,
+        "spans": {
+          "EyeLeftX": 0.0,
+          "EyeOpenLeft": 0.0,
+          "FaceAngleX": 0.0,
+          "FaceAngleY": 0.0,
+          "MouthOpen": 0.0
+        },
+        "changed": [],
+        "ok": false
+      },
+      {
+        "index": 6,
+        "start": 180.0,
+        "end": 210.0,
+        "spans": {
+          "EyeLeftX": 0.0,
+          "EyeOpenLeft": 0.0,
+          "FaceAngleX": 0.0,
+          "FaceAngleY": 0.0,
+          "MouthOpen": 0.0
+        },
+        "changed": [],
+        "ok": false
+      },
+      {
+        "index": 7,
+        "start": 210.0,
+        "end": 240.0,
+        "spans": {
+          "EyeLeftX": 0.0,
+          "EyeOpenLeft": 0.0,
+          "FaceAngleX": 0.0,
+          "FaceAngleY": 0.0,
+          "MouthOpen": 0.0
+        },
+        "changed": [],
+        "ok": false
+      },
+      {
+        "index": 8,
+        "start": 240.0,
+        "end": 270.0,
+        "spans": {
+          "EyeLeftX": 0.0,
+          "EyeOpenLeft": 0.0,
+          "FaceAngleX": 0.0,
+          "FaceAngleY": 0.0,
+          "MouthOpen": 0.0
+        },
+        "changed": [],
+        "ok": false
+      },
+      {
+        "index": 9,
+        "start": 270.0,
+        "end": 300.0,
+        "spans": {
+          "EyeLeftX": 0.0,
+          "EyeOpenLeft": 0.0,
+          "FaceAngleX": 0.0,
+          "FaceAngleY": 0.0,
+          "MouthOpen": 0.0
+        },
+        "changed": [],
+        "ok": false
+      },
+      {
+        "index": 10,
+        "start": 300.0,
+        "end": 330.0,
+        "spans": {
+          "EyeLeftX": 0.0,
+          "EyeOpenLeft": 0.0,
+          "FaceAngleX": 0.0,
+          "FaceAngleY": 0.0,
+          "MouthOpen": 0.0
+        },
+        "changed": [],
+        "ok": false
+      },
+      {
+        "index": 11,
+        "start": 330.0,
+        "end": 360.0,
+        "spans": {
+          "EyeLeftX": 0.0,
+          "EyeOpenLeft": 0.0,
+          "FaceAngleX": 0.0,
+          "FaceAngleY": 0.0,
+          "MouthOpen": 0.0
+        },
+        "changed": [],
+        "ok": false
+      },
+      {
+        "index": 12,
+        "start": 360.0,
+        "end": 390.0,
+        "spans": {
+          "EyeLeftX": 0.0,
+          "EyeOpenLeft": 0.0,
+          "FaceAngleX": 0.0,
+          "FaceAngleY": 0.0,
+          "MouthOpen": 0.0
+        },
+        "changed": [],
+        "ok": false
+      },
+      {
+        "index": 13,
+        "start": 390.0,
+        "end": 420.0,
+        "spans": {
+          "EyeLeftX": 0.0,
+          "EyeOpenLeft": 0.0,
+          "FaceAngleX": 0.0,
+          "FaceAngleY": 0.0,
+          "MouthOpen": 0.0
+        },
+        "changed": [],
+        "ok": false
+      },
+      {
+        "index": 14,
+        "start": 420.0,
+        "end": 450.0,
+        "spans": {
+          "EyeLeftX": 0.0,
+          "EyeOpenLeft": 0.0,
+          "FaceAngleX": 0.0,
+          "FaceAngleY": 0.0,
+          "MouthOpen": 0.0
+        },
+        "changed": [],
+        "ok": false
+      },
+      {
+        "index": 15,
+        "start": 450.0,
+        "end": 480.0,
+        "spans": {
+          "EyeLeftX": 0.0,
+          "EyeOpenLeft": 0.0,
+          "FaceAngleX": 0.0,
+          "FaceAngleY": 0.0,
+          "MouthOpen": 0.0
+        },
+        "changed": [],
+        "ok": false
+      },
+      {
+        "index": 16,
+        "start": 480.0,
+        "end": 510.0,
+        "spans": {
+          "EyeLeftX": 0.0,
+          "EyeOpenLeft": 0.0,
+          "FaceAngleX": 0.0,
+          "FaceAngleY": 0.0,
+          "MouthOpen": 0.0
+        },
+        "changed": [],
+        "ok": false
+      },
+      {
+        "index": 17,
+        "start": 510.0,
+        "end": 540.0,
+        "spans": {
+          "EyeLeftX": 0.0,
+          "EyeOpenLeft": 0.0,
+          "FaceAngleX": 0.0,
+          "FaceAngleY": 0.0,
+          "MouthOpen": 0.0
+        },
+        "changed": [],
+        "ok": false
+      },
+      {
+        "index": 18,
+        "start": 540.0,
+        "end": 570.0,
+        "spans": {
+          "EyeLeftX": 0.0,
+          "EyeOpenLeft": 0.0,
+          "FaceAngleX": 0.0,
+          "FaceAngleY": 0.0,
+          "MouthOpen": 0.0
+        },
+        "changed": [],
+        "ok": false
+      }
+    ],
+    "windows_total": 19,
+    "windows_ok": 4,
+    "partial_seconds": 29.906,
+    "passed": false,
+    "reasons": [
+      "window 4 (120.0-150.0 s) showed no change in any of the tracked parameters (need >= 1 changed)",
+      "window 5 (150.0-180.0 s) showed no change in any of the tracked parameters (need >= 1 changed)",
+      "window 6 (180.0-210.0 s) showed no change in any of the tracked parameters (need >= 1 changed)",
+      "window 7 (210.0-240.0 s) showed no change in any of the tracked parameters (need >= 1 changed)",
+      "window 8 (240.0-270.0 s) showed no change in any of the tracked parameters (need >= 1 changed)",
+      "window 9 (270.0-300.0 s) showed no change in any of the tracked parameters (need >= 1 changed)",
+      "window 10 (300.0-330.0 s) showed no change in any of the tracked parameters (need >= 1 changed)",
+      "window 11 (330.0-360.0 s) showed no change in any of the tracked parameters (need >= 1 changed)",
+      "window 12 (360.0-390.0 s) showed no change in any of the tracked parameters (need >= 1 changed)",
+      "window 13 (390.0-420.0 s) showed no change in any of the tracked parameters (need >= 1 changed)",
+      "window 14 (420.0-450.0 s) showed no change in any of the tracked parameters (need >= 1 changed)",
+      "window 15 (450.0-480.0 s) showed no change in any of the tracked parameters (need >= 1 changed)",
+      "window 16 (480.0-510.0 s) showed no change in any of the tracked parameters (need >= 1 changed)",
+      "window 17 (510.0-540.0 s) showed no change in any of the tracked parameters (need >= 1 changed)",
+      "window 18 (540.0-570.0 s) showed no change in any of the tracked parameters (need >= 1 changed)"
+    ]
+  }
+}

@@ -1,0 +1,56 @@
+[vts-stability] duration=600s interval=0.2s window=30s required=300s parameters=MouthOpen,FaceAngleX,FaceAngleY,EyeOpenLeft,EyeLeftX
+[vts-stability] 现在（或稍后）在另一个终端启动桥接：python apps/vtube_bridge/main.py --input 0 --sink vts --no-gui
+[vts-stability] connected to VTS at ws://127.0.0.1:8001
+[vts-stability] authenticated (reusing the bridge's cached token)
+[vts-stability] VTS 1.35.10  connectedPlugins=2 (1 = 只有采样器自己，桥接起来后应变成 2)  framerate=58
+[vts-stability] 判据：connectedPlugins >= 2 才算桥接连上（采样器自己占 1）
+[vts-stability] 参数=MouthOpen, FaceAngleX, FaceAngleY, EyeOpenLeft, EyeLeftX  采样 600 s / 2090 行  窗口 30 s / epsilon 0.02
+
+[verdict] FAIL  连续 599.9 s（要求 300 s）  窗口 4/19 通过
+          桥接连上于 0.0 s，最长一段结束于 599.9 s，末尾余量 29.9 s
+          所有连上时间合计 599.9 s  掉线 0 次  采样失败 0 行  VTS 重启 0 次  采样中断 0 次
+[reason] window 4 (120.0-150.0 s) showed no change in any of the tracked parameters (need >= 1 changed)
+[reason] window 5 (150.0-180.0 s) showed no change in any of the tracked parameters (need >= 1 changed)
+[reason] window 6 (180.0-210.0 s) showed no change in any of the tracked parameters (need >= 1 changed)
+[reason] window 7 (210.0-240.0 s) showed no change in any of the tracked parameters (need >= 1 changed)
+[reason] window 8 (240.0-270.0 s) showed no change in any of the tracked parameters (need >= 1 changed)
+[reason] window 9 (270.0-300.0 s) showed no change in any of the tracked parameters (need >= 1 changed)
+[reason] window 10 (300.0-330.0 s) showed no change in any of the tracked parameters (need >= 1 changed)
+[reason] window 11 (330.0-360.0 s) showed no change in any of the tracked parameters (need >= 1 changed)
+[reason] window 12 (360.0-390.0 s) showed no change in any of the tracked parameters (need >= 1 changed)
+[reason] window 13 (390.0-420.0 s) showed no change in any of the tracked parameters (need >= 1 changed)
+[reason] window 14 (420.0-450.0 s) showed no change in any of the tracked parameters (need >= 1 changed)
+[reason] window 15 (450.0-480.0 s) showed no change in any of the tracked parameters (need >= 1 changed)
+[reason] window 16 (480.0-510.0 s) showed no change in any of the tracked parameters (need >= 1 changed)
+[reason] window 17 (510.0-540.0 s) showed no change in any of the tracked parameters (need >= 1 changed)
+[reason] window 18 (540.0-570.0 s) showed no change in any of the tracked parameters (need >= 1 changed)
+
+  window  0      0.0-   30.0 s  ok   EyeLeftX=0.2159 EyeOpenLeft=0.958 FaceAngleX=32.0407 FaceAngleY=19.7007 MouthOpen=0.4203
+  window  1     30.0-   60.0 s  ok   EyeLeftX=0.5992 EyeOpenLeft=1 FaceAngleX=27.5102 FaceAngleY=33.7411 MouthOpen=0.5623
+  window  2     60.0-   90.0 s  ok   EyeLeftX=0.2581 EyeOpenLeft=0.9318 FaceAngleX=19.988 FaceAngleY=19.798 MouthOpen=0.1822
+  window  3     90.0-  120.0 s  ok   EyeLeftX=0.2758 EyeOpenLeft=0.7764 FaceAngleX=24.1844 FaceAngleY=14.9049 MouthOpen=0.4159
+  window  4    120.0-  150.0 s  BAD  EyeLeftX=0 EyeOpenLeft=0 FaceAngleX=0 FaceAngleY=0 MouthOpen=0
+  window  5    150.0-  180.0 s  BAD  EyeLeftX=0 EyeOpenLeft=0 FaceAngleX=0 FaceAngleY=0 MouthOpen=0
+  window  6    180.0-  210.0 s  BAD  EyeLeftX=0 EyeOpenLeft=0 FaceAngleX=0 FaceAngleY=0 MouthOpen=0
+  window  7    210.0-  240.0 s  BAD  EyeLeftX=0 EyeOpenLeft=0 FaceAngleX=0 FaceAngleY=0 MouthOpen=0
+  window  8    240.0-  270.0 s  BAD  EyeLeftX=0 EyeOpenLeft=0 FaceAngleX=0 FaceAngleY=0 MouthOpen=0
+  window  9    270.0-  300.0 s  BAD  EyeLeftX=0 EyeOpenLeft=0 FaceAngleX=0 FaceAngleY=0 MouthOpen=0
+  window 10    300.0-  330.0 s  BAD  EyeLeftX=0 EyeOpenLeft=0 FaceAngleX=0 FaceAngleY=0 MouthOpen=0
+  window 11    330.0-  360.0 s  BAD  EyeLeftX=0 EyeOpenLeft=0 FaceAngleX=0 FaceAngleY=0 MouthOpen=0
+  window 12    360.0-  390.0 s  BAD  EyeLeftX=0 EyeOpenLeft=0 FaceAngleX=0 FaceAngleY=0 MouthOpen=0
+  window 13    390.0-  420.0 s  BAD  EyeLeftX=0 EyeOpenLeft=0 FaceAngleX=0 FaceAngleY=0 MouthOpen=0
+  window 14    420.0-  450.0 s  BAD  EyeLeftX=0 EyeOpenLeft=0 FaceAngleX=0 FaceAngleY=0 MouthOpen=0
+  window 15    450.0-  480.0 s  BAD  EyeLeftX=0 EyeOpenLeft=0 FaceAngleX=0 FaceAngleY=0 MouthOpen=0
+  window 16    480.0-  510.0 s  BAD  EyeLeftX=0 EyeOpenLeft=0 FaceAngleX=0 FaceAngleY=0 MouthOpen=0
+  window 17    510.0-  540.0 s  BAD  EyeLeftX=0 EyeOpenLeft=0 FaceAngleX=0 FaceAngleY=0 MouthOpen=0
+  window 18    540.0-  570.0 s  BAD  EyeLeftX=0 EyeOpenLeft=0 FaceAngleX=0 FaceAngleY=0 MouthOpen=0
+
+[how-to-read]
+  * 启动后 plugins == 1 只是桥接还没起来，不是掉线（判据只从连上那一刻算起）
+  * 某窗口 span 全为 0 → 那 30 秒参数没动（人离开画面 / 桥接停了 / 模型被换掉）
+  * uptime 回退 → VTS 自己重启过，连续性要重新计
+  * 通过与否都落盘原始 CSV，别人可以自己重算，不必相信这一行结论
+
+[vts-stability] 原始数据 artifacts\diag\vts_stability_20260916-145245.csv
+[vts-stability] 结论     artifacts\diag\vts_stability_20260916-145245.json
+[vts-stability] 报告     artifacts\diag\vts_stability_20260916-145245.txt

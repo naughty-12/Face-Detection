@@ -1,0 +1,24 @@
+[vts-stability] duration=8s interval=0.3s window=5s required=5s parameters=MouthOpen,FaceAngleX,FaceAngleY,EyeOpenLeft,EyeLeftX
+[vts-stability] 现在（或稍后）在另一个终端启动桥接：python apps/vtube_bridge/main.py --input 0 --sink vts --no-gui
+[vts-stability] connected to VTS at ws://127.0.0.1:8001
+[vts-stability] authenticated (reusing the bridge's cached token)
+[vts-stability] VTS 1.35.10  connectedPlugins=2 (1 = 只有采样器自己，桥接起来后应变成 2)  framerate=58
+[vts-stability] 原始数据边采边写：artifacts\diag\_smoke\vts_stability_20260916-150757.csv
+[vts-stability] 判据：connectedPlugins >= 2 才算桥接连上（采样器自己占 1）
+[vts-stability] 参数=MouthOpen, FaceAngleX, FaceAngleY, EyeOpenLeft, EyeLeftX  采样 8 s / 21 行  窗口 5 s / epsilon 0.02
+
+[verdict] PASS  连续 7.8 s（要求 5 s）  窗口 1/1 通过
+          桥接连上于 0.0 s，最长一段结束于 7.8 s，末尾余量 2.8 s
+          所有连上时间合计 7.8 s  掉线 0 次  采样失败 0 行  VTS 重启 0 次  采样中断 0 次
+
+  window  0      0.0-    5.0 s  ok   EyeLeftX=0.1345 EyeOpenLeft=0.6596 FaceAngleX=5.0841 FaceAngleY=6.7257 MouthOpen=0.2348
+
+[how-to-read]
+  * 启动后 plugins == 1 只是桥接还没起来，不是掉线（判据只从连上那一刻算起）
+  * 某窗口 span 全为 0 → 那 30 秒参数没动（人离开画面 / 桥接停了 / 模型被换掉）
+  * uptime 回退 → VTS 自己重启过，连续性要重新计
+  * 通过与否都落盘原始 CSV，别人可以自己重算，不必相信这一行结论
+
+[vts-stability] 原始数据 artifacts\diag\_smoke\vts_stability_20260916-150757.csv
+[vts-stability] 结论     artifacts\diag\_smoke\vts_stability_20260916-150757.json
+[vts-stability] 报告     artifacts\diag\_smoke\vts_stability_20260916-150757.txt

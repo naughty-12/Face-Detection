@@ -1,0 +1,42 @@
+[vts-stability] duration=600s interval=0.2s window=30s required=300s parameters=MouthOpen,FaceAngleX,FaceAngleY,EyeOpenLeft,EyeLeftX
+[vts-stability] 现在（或稍后）在另一个终端启动桥接：python apps/vtube_bridge/main.py --input 0 --sink vts --no-gui
+[vts-stability] connected to VTS at ws://127.0.0.1:8001
+[vts-stability] authenticated (reusing the bridge's cached token)
+[vts-stability] VTS 1.35.10  connectedPlugins=2 (1 = 只有采样器自己，桥接起来后应变成 2)  framerate=59
+[vts-stability] 原始数据边采边写：artifacts\diag\vts_stability_20260916-150813.csv
+[vts-stability] 判据：connectedPlugins >= 2 才算桥接连上（采样器自己占 1）
+[vts-stability] 参数=MouthOpen, FaceAngleX, FaceAngleY, EyeOpenLeft, EyeLeftX  采样 600 s / 2090 行  窗口 30 s / epsilon 0.02
+
+[verdict] PASS  连续 599.7 s（要求 300 s）  窗口 19/19 通过
+          桥接连上于 0.0 s，最长一段结束于 599.7 s，末尾余量 29.7 s
+          所有连上时间合计 599.7 s  掉线 0 次  采样失败 0 行  VTS 重启 0 次  采样中断 0 次
+
+  window  0      0.0-   30.0 s  ok   EyeLeftX=0.2476 EyeOpenLeft=1 FaceAngleX=13.1511 FaceAngleY=18.8552 MouthOpen=0.2928
+  window  1     30.0-   60.0 s  ok   EyeLeftX=0.3454 EyeOpenLeft=0.9581 FaceAngleX=26.9509 FaceAngleY=27.6811 MouthOpen=0.2115
+  window  2     60.0-   90.0 s  ok   EyeLeftX=0.1361 EyeOpenLeft=0.7154 FaceAngleX=5.0025 FaceAngleY=3.7938 MouthOpen=0.2368
+  window  3     90.0-  120.0 s  ok   EyeLeftX=0.2425 EyeOpenLeft=0.9298 FaceAngleX=7.3918 FaceAngleY=7.8195 MouthOpen=0.1388
+  window  4    120.0-  150.0 s  ok   EyeLeftX=0.3035 EyeOpenLeft=0.9214 FaceAngleX=4.5069 FaceAngleY=10.258 MouthOpen=0.1193
+  window  5    150.0-  180.0 s  ok   EyeLeftX=0.2475 EyeOpenLeft=0.8725 FaceAngleX=11.72 FaceAngleY=7.9674 MouthOpen=0.0381
+  window  6    180.0-  210.0 s  ok   EyeLeftX=0.2172 EyeOpenLeft=0.8391 FaceAngleX=2.6307 FaceAngleY=4.0072 MouthOpen=0.1026
+  window  7    210.0-  240.0 s  ok   EyeLeftX=0.132 EyeOpenLeft=0.8185 FaceAngleX=3.6306 FaceAngleY=3.4701 MouthOpen=0.0209
+  window  8    240.0-  270.0 s  ok   EyeLeftX=0.1276 EyeOpenLeft=0.8452 FaceAngleX=1.5432 FaceAngleY=1.861 MouthOpen=0.0166
+  window  9    270.0-  300.0 s  ok   EyeLeftX=0.0955 EyeOpenLeft=0.7523 FaceAngleX=0.9746 FaceAngleY=1.8752 MouthOpen=0.016
+  window 10    300.0-  330.0 s  ok   EyeLeftX=0.2777 EyeOpenLeft=0.9239 FaceAngleX=3.6914 FaceAngleY=6.2659 MouthOpen=0.0285
+  window 11    330.0-  360.0 s  ok   EyeLeftX=0.3462 EyeOpenLeft=0.7871 FaceAngleX=11.9657 FaceAngleY=11.2709 MouthOpen=0.3405
+  window 12    360.0-  390.0 s  ok   EyeLeftX=0.1254 EyeOpenLeft=0.7719 FaceAngleX=6.9223 FaceAngleY=9.9485 MouthOpen=0.1832
+  window 13    390.0-  420.0 s  ok   EyeLeftX=0.1366 EyeOpenLeft=0.8317 FaceAngleX=5.6582 FaceAngleY=8.1036 MouthOpen=0.0815
+  window 14    420.0-  450.0 s  ok   EyeLeftX=0.125 EyeOpenLeft=0.8117 FaceAngleX=3.0544 FaceAngleY=3.1445 MouthOpen=0.0785
+  window 15    450.0-  480.0 s  ok   EyeLeftX=0.1404 EyeOpenLeft=0.8277 FaceAngleX=2.4135 FaceAngleY=1.8674 MouthOpen=0.1326
+  window 16    480.0-  510.0 s  ok   EyeLeftX=0.4297 EyeOpenLeft=0.9799 FaceAngleX=30.3577 FaceAngleY=14.4571 MouthOpen=0.367
+  window 17    510.0-  540.0 s  ok   EyeLeftX=0.3316 EyeOpenLeft=0.9512 FaceAngleX=5.5146 FaceAngleY=17.7616 MouthOpen=0.3235
+  window 18    540.0-  570.0 s  ok   EyeLeftX=0.2082 EyeOpenLeft=0.7906 FaceAngleX=22.0308 FaceAngleY=15.0018 MouthOpen=0.205
+
+[how-to-read]
+  * 启动后 plugins == 1 只是桥接还没起来，不是掉线（判据只从连上那一刻算起）
+  * 某窗口 span 全为 0 → 那 30 秒参数没动（人离开画面 / 桥接停了 / 模型被换掉）
+  * uptime 回退 → VTS 自己重启过，连续性要重新计
+  * 通过与否都落盘原始 CSV，别人可以自己重算，不必相信这一行结论
+
+[vts-stability] 原始数据 artifacts\diag\vts_stability_20260916-150813.csv
+[vts-stability] 结论     artifacts\diag\vts_stability_20260916-150813.json
+[vts-stability] 报告     artifacts\diag\vts_stability_20260916-150813.txt

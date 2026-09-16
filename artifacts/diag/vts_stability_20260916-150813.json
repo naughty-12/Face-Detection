@@ -1,0 +1,426 @@
+{
+  "generated_at": "2026-09-16 15:18:17",
+  "criterion": {
+    "connectedPlugins_at_least": 2,
+    "note": "connectedPlugins counts live VTS API sessions including this sampler; 1 = sampler alone (bridge not attached yet, NOT a disconnect)"
+  },
+  "settings": {
+    "duration": 600.0,
+    "interval": 0.2,
+    "stats_interval": 1.0,
+    "window": 30.0,
+    "epsilon": 0.02,
+    "min_changed_params": 1,
+    "required_stable": 300.0,
+    "other_plugins": 1,
+    "parameters": [
+      "MouthOpen",
+      "FaceAngleX",
+      "FaceAngleY",
+      "EyeOpenLeft",
+      "EyeLeftX"
+    ],
+    "host": "127.0.0.1",
+    "port": 8001,
+    "max_gap_seconds": 2.0
+  },
+  "samples": 2090,
+  "raw_csv": "artifacts\\diag\\vts_stability_20260916-150813.csv",
+  "verdict": {
+    "attached": true,
+    "attached_at": 0.0,
+    "last_attached_at": 599.734,
+    "stable_seconds": 599.734,
+    "total_attached_seconds": 599.734,
+    "required_seconds": 300.0,
+    "disconnects": [],
+    "sample_errors": [],
+    "vts_restarts": [],
+    "sampling_gaps": [],
+    "windows": [
+      {
+        "index": 0,
+        "start": 0.0,
+        "end": 30.0,
+        "spans": {
+          "EyeLeftX": 0.2476,
+          "EyeOpenLeft": 1.0,
+          "FaceAngleX": 13.1511,
+          "FaceAngleY": 18.8552,
+          "MouthOpen": 0.2928
+        },
+        "changed": [
+          "EyeLeftX",
+          "EyeOpenLeft",
+          "FaceAngleX",
+          "FaceAngleY",
+          "MouthOpen"
+        ],
+        "ok": true
+      },
+      {
+        "index": 1,
+        "start": 30.0,
+        "end": 60.0,
+        "spans": {
+          "EyeLeftX": 0.3454,
+          "EyeOpenLeft": 0.9581,
+          "FaceAngleX": 26.9509,
+          "FaceAngleY": 27.6811,
+          "MouthOpen": 0.2115
+        },
+        "changed": [
+          "EyeLeftX",
+          "EyeOpenLeft",
+          "FaceAngleX",
+          "FaceAngleY",
+          "MouthOpen"
+        ],
+        "ok": true
+      },
+      {
+        "index": 2,
+        "start": 60.0,
+        "end": 90.0,
+        "spans": {
+          "EyeLeftX": 0.1361,
+          "EyeOpenLeft": 0.7154,
+          "FaceAngleX": 5.0025,
+          "FaceAngleY": 3.7938,
+          "MouthOpen": 0.2368
+        },
+        "changed": [
+          "EyeLeftX",
+          "EyeOpenLeft",
+          "FaceAngleX",
+          "FaceAngleY",
+          "MouthOpen"
+        ],
+        "ok": true
+      },
+      {
+        "index": 3,
+        "start": 90.0,
+        "end": 120.0,
+        "spans": {
+          "EyeLeftX": 0.2425,
+          "EyeOpenLeft": 0.9298,
+          "FaceAngleX": 7.3918,
+          "FaceAngleY": 7.8195,
+          "MouthOpen": 0.1388
+        },
+        "changed": [
+          "EyeLeftX",
+          "EyeOpenLeft",
+          "FaceAngleX",
+          "FaceAngleY",
+          "MouthOpen"
+        ],
+        "ok": true
+      },
+      {
+        "index": 4,
+        "start": 120.0,
+        "end": 150.0,
+        "spans": {
+          "EyeLeftX": 0.3035,
+          "EyeOpenLeft": 0.9214,
+          "FaceAngleX": 4.5069,
+          "FaceAngleY": 10.258,
+          "MouthOpen": 0.1193
+        },
+        "changed": [
+          "EyeLeftX",
+          "EyeOpenLeft",
+          "FaceAngleX",
+          "FaceAngleY",
+          "MouthOpen"
+        ],
+        "ok": true
+      },
+      {
+        "index": 5,
+        "start": 150.0,
+        "end": 180.0,
+        "spans": {
+          "EyeLeftX": 0.2475,
+          "EyeOpenLeft": 0.8725,
+          "FaceAngleX": 11.72,
+          "FaceAngleY": 7.9674,
+          "MouthOpen": 0.0381
+        },
+        "changed": [
+          "EyeLeftX",
+          "EyeOpenLeft",
+          "FaceAngleX",
+          "FaceAngleY",
+          "MouthOpen"
+        ],
+        "ok": true
+      },
+      {
+        "index": 6,
+        "start": 180.0,
+        "end": 210.0,
+        "spans": {
+          "EyeLeftX": 0.2172,
+          "EyeOpenLeft": 0.8391,
+          "FaceAngleX": 2.6307,
+          "FaceAngleY": 4.0072,
+          "MouthOpen": 0.1026
+        },
+        "changed": [
+          "EyeLeftX",
+          "EyeOpenLeft",
+          "FaceAngleX",
+          "FaceAngleY",
+          "MouthOpen"
+        ],
+        "ok": true
+      },
+      {
+        "index": 7,
+        "start": 210.0,
+        "end": 240.0,
+        "spans": {
+          "EyeLeftX": 0.132,
+          "EyeOpenLeft": 0.8185,
+          "FaceAngleX": 3.6306,
+          "FaceAngleY": 3.4701,
+          "MouthOpen": 0.0209
+        },
+        "changed": [
+          "EyeLeftX",
+          "EyeOpenLeft",
+          "FaceAngleX",
+          "FaceAngleY",
+          "MouthOpen"
+        ],
+        "ok": true
+      },
+      {
+        "index": 8,
+        "start": 240.0,
+        "end": 270.0,
+        "spans": {
+          "EyeLeftX": 0.1276,
+          "EyeOpenLeft": 0.8452,
+          "FaceAngleX": 1.5432,
+          "FaceAngleY": 1.861,
+          "MouthOpen": 0.0166
+        },
+        "changed": [
+          "EyeLeftX",
+          "EyeOpenLeft",
+          "FaceAngleX",
+          "FaceAngleY"
+        ],
+        "ok": true
+      },
+      {
+        "index": 9,
+        "start": 270.0,
+        "end": 300.0,
+        "spans": {
+          "EyeLeftX": 0.0955,
+          "EyeOpenLeft": 0.7523,
+          "FaceAngleX": 0.9746,
+          "FaceAngleY": 1.8752,
+          "MouthOpen": 0.016
+        },
+        "changed": [
+          "EyeLeftX",
+          "EyeOpenLeft",
+          "FaceAngleX",
+          "FaceAngleY"
+        ],
+        "ok": true
+      },
+      {
+        "index": 10,
+        "start": 300.0,
+        "end": 330.0,
+        "spans": {
+          "EyeLeftX": 0.2777,
+          "EyeOpenLeft": 0.9239,
+          "FaceAngleX": 3.6914,
+          "FaceAngleY": 6.2659,
+          "MouthOpen": 0.0285
+        },
+        "changed": [
+          "EyeLeftX",
+          "EyeOpenLeft",
+          "FaceAngleX",
+          "FaceAngleY",
+          "MouthOpen"
+        ],
+        "ok": true
+      },
+      {
+        "index": 11,
+        "start": 330.0,
+        "end": 360.0,
+        "spans": {
+          "EyeLeftX": 0.3462,
+          "EyeOpenLeft": 0.7871,
+          "FaceAngleX": 11.9657,
+          "FaceAngleY": 11.2709,
+          "MouthOpen": 0.3405
+        },
+        "changed": [
+          "EyeLeftX",
+          "EyeOpenLeft",
+          "FaceAngleX",
+          "FaceAngleY",
+          "MouthOpen"
+        ],
+        "ok": true
+      },
+      {
+        "index": 12,
+        "start": 360.0,
+        "end": 390.0,
+        "spans": {
+          "EyeLeftX": 0.1254,
+          "EyeOpenLeft": 0.7719,
+          "FaceAngleX": 6.9223,
+          "FaceAngleY": 9.9485,
+          "MouthOpen": 0.1832
+        },
+        "changed": [
+          "EyeLeftX",
+          "EyeOpenLeft",
+          "FaceAngleX",
+          "FaceAngleY",
+          "MouthOpen"
+        ],
+        "ok": true
+      },
+      {
+        "index": 13,
+        "start": 390.0,
+        "end": 420.0,
+        "spans": {
+          "EyeLeftX": 0.1366,
+          "EyeOpenLeft": 0.8317,
+          "FaceAngleX": 5.6582,
+          "FaceAngleY": 8.1036,
+          "MouthOpen": 0.0815
+        },
+        "changed": [
+          "EyeLeftX",
+          "EyeOpenLeft",
+          "FaceAngleX",
+          "FaceAngleY",
+          "MouthOpen"
+        ],
+        "ok": true
+      },
+      {
+        "index": 14,
+        "start": 420.0,
+        "end": 450.0,
+        "spans": {
+          "EyeLeftX": 0.125,
+          "EyeOpenLeft": 0.8117,
+          "FaceAngleX": 3.0544,
+          "FaceAngleY": 3.1445,
+          "MouthOpen": 0.0785
+        },
+        "changed": [
+          "EyeLeftX",
+          "EyeOpenLeft",
+          "FaceAngleX",
+          "FaceAngleY",
+          "MouthOpen"
+        ],
+        "ok": true
+      },
+      {
+        "index": 15,
+        "start": 450.0,
+        "end": 480.0,
+        "spans": {
+          "EyeLeftX": 0.1404,
+          "EyeOpenLeft": 0.8277,
+          "FaceAngleX": 2.4135,
+          "FaceAngleY": 1.8674,
+          "MouthOpen": 0.1326
+        },
+        "changed": [
+          "EyeLeftX",
+          "EyeOpenLeft",
+          "FaceAngleX",
+          "FaceAngleY",
+          "MouthOpen"
+        ],
+        "ok": true
+      },
+      {
+        "index": 16,
+        "start": 480.0,
+        "end": 510.0,
+        "spans": {
+          "EyeLeftX": 0.4297,
+          "EyeOpenLeft": 0.9799,
+          "FaceAngleX": 30.3577,
+          "FaceAngleY": 14.4571,
+          "MouthOpen": 0.367
+        },
+        "changed": [
+          "EyeLeftX",
+          "EyeOpenLeft",
+          "FaceAngleX",
+          "FaceAngleY",
+          "MouthOpen"
+        ],
+        "ok": true
+      },
+      {
+        "index": 17,
+        "start": 510.0,
+        "end": 540.0,
+        "spans": {
+          "EyeLeftX": 0.3316,
+          "EyeOpenLeft": 0.9512,
+          "FaceAngleX": 5.5146,
+          "FaceAngleY": 17.7616,
+          "MouthOpen": 0.3235
+        },
+        "changed": [
+          "EyeLeftX",
+          "EyeOpenLeft",
+          "FaceAngleX",
+          "FaceAngleY",
+          "MouthOpen"
+        ],
+        "ok": true
+      },
+      {
+        "index": 18,
+        "start": 540.0,
+        "end": 570.0,
+        "spans": {
+          "EyeLeftX": 0.2082,
+          "EyeOpenLeft": 0.7906,
+          "FaceAngleX": 22.0308,
+          "FaceAngleY": 15.0018,
+          "MouthOpen": 0.205
+        },
+        "changed": [
+          "EyeLeftX",
+          "EyeOpenLeft",
+          "FaceAngleX",
+          "FaceAngleY",
+          "MouthOpen"
+        ],
+        "ok": true
+      }
+    ],
+    "windows_total": 19,
+    "windows_ok": 19,
+    "partial_seconds": 29.734,
+    "passed": true,
+    "reasons": []
+  }
+}

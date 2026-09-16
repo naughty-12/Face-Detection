@@ -1,0 +1,13 @@
+[camera] opened, reported size 640x480
+[frame] 640x480
+  [frame] mean_brightness= 140.5  p5=19 p95=255 laplacian_var=   257.0
+  [saved] camera_frame.png  640x480
+[yolo] center face = {'xyxy': (277.328369140625, 168.0607147216797, 424.081298828125, 379.65850830078125), 'center': (350.704833984375, 273.85961151123047), 'confidence': 0.8878667950630188}
+[yolo] box w=147 h=212 conf=0.888
+[crop] (197,120)-(504,427) size=307x307 clamped_at_top=False clamped_at_bottom=False
+  [crop] mean_brightness= 114.6  p5=21 p95=255 laplacian_var=   437.8
+  [saved] bridge_crop.png  307x307
+[full frame (no crop)] eyeBlinkLeft=0.0335 eyeBlinkRight=0.0356 jawOpen=0.0464
+[full frame (no crop)] -> EyeOpenLeft=0.9665474109351635 EyeOpenRight=0.9643882848322392 MouthOpen=0.046399280428886414
+[bridge crop path] eyeBlinkLeft=0.0246 eyeBlinkRight=0.0473 jawOpen=0.0364
+[bridge crop path] -> EyeOpenLeft=0.9754018355160952 EyeOpenRight=0.9527316279709339 MouthOpen=0.036447398364543915

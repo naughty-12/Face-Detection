@@ -1,0 +1,68 @@
+{
+  "generated_at": "2026-09-16 15:08:10",
+  "criterion": {
+    "connectedPlugins_at_least": 2,
+    "note": "connectedPlugins counts live VTS API sessions including this sampler; 1 = sampler alone (bridge not attached yet, NOT a disconnect)"
+  },
+  "settings": {
+    "duration": 8.0,
+    "interval": 0.3,
+    "stats_interval": 1.0,
+    "window": 5.0,
+    "epsilon": 0.02,
+    "min_changed_params": 1,
+    "required_stable": 5.0,
+    "other_plugins": 1,
+    "parameters": [
+      "MouthOpen",
+      "FaceAngleX",
+      "FaceAngleY",
+      "EyeOpenLeft",
+      "EyeLeftX"
+    ],
+    "host": "127.0.0.1",
+    "port": 8001,
+    "max_gap_seconds": 3.0
+  },
+  "samples": 21,
+  "raw_csv": "artifacts\\diag\\_smoke\\vts_stability_20260916-150757.csv",
+  "verdict": {
+    "attached": true,
+    "attached_at": 0.0,
+    "last_attached_at": 7.765,
+    "stable_seconds": 7.765,
+    "total_attached_seconds": 7.765,
+    "required_seconds": 5.0,
+    "disconnects": [],
+    "sample_errors": [],
+    "vts_restarts": [],
+    "sampling_gaps": [],
+    "windows": [
+      {
+        "index": 0,
+        "start": 0.0,
+        "end": 5.0,
+        "spans": {
+          "EyeLeftX": 0.1345,
+          "EyeOpenLeft": 0.6596,
+          "FaceAngleX": 5.0841,
+          "FaceAngleY": 6.7257,
+          "MouthOpen": 0.2348
+        },
+        "changed": [
+          "EyeLeftX",
+          "EyeOpenLeft",
+          "FaceAngleX",
+          "FaceAngleY",
+          "MouthOpen"
+        ],
+        "ok": true
+      }
+    ],
+    "windows_total": 1,
+    "windows_ok": 1,
+    "partial_seconds": 2.765,
+    "passed": true,
+    "reasons": []
+  }
+}
