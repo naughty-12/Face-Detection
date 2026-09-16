@@ -663,10 +663,11 @@ MediaPipe 1.0 ｜ ONNX Runtime 1.27（**本机无 CUDA provider**）｜
 websocket-client 1.9 ｜ Matplotlib ｜ TensorBoard ｜
 Unity 侧为 C#（仅静态检查，未在 Unity 中编译）
 
-> 上面只列**实际用到**的东西（版本为本机 `pip show` 实测值）。已从技术栈与 `requirements.txt` 中移除：
-> **PyQt5**（本机未安装、GUI 调试面板从未运行）、**scikit-learn**（全仓库从未 import）、
-> **onnx-simplifier**（从未 import）。**Albumentations** 不在技术栈里：它只用于增强效果可视化、
-> 不参与训练（见下方「已知限制」第 4 条）。
+> 上面只列**实际用到**的东西（版本为本机 `pip show` 实测值）。同时删掉了三项"写了但没用"的条目：
+> **PyQt5**（依赖清单里有，但本机从未安装、GUI 面板从未运行）、**scikit-learn**（上表与清单里都有，
+> 但全仓库从未 import）、**onnx-simplifier**（清单里有，但从未 import）。
+> **Albumentations** 已从上表移除（只用于增强可视化、不参与训练），但仍留在依赖清单里 ——
+> 因为 `src/data/augment.py` 确实 import 它（见「已知限制」第 4 条）。
 >
 > GUI 调试面板（PyQt5）是**可选项**，需要自行安装（不在依赖清单内），故所有命令一律带 `--no-gui`。
 
