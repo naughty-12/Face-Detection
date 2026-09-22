@@ -4,6 +4,41 @@
 
 ---
 
+## 2026-09-22 远端收敛：GitHub `main` 与本地是**两条线** → 备份旧线后强推（已执行）
+
+### 背景
+
+本轮推送时实测：四个远端里只有 gitee（`origin`）与本地同步。GitHub `main` 停在 **2026-06-27 的 `32f7433`**，
+与本地 `main` 自 **`a6d6e20`（2026-06-25）之后分成两条线** —— 本地领先 **40** 个提交，
+GitHub 上有 **11** 个本地没有的提交（旧布局：`dataset/`、`deployment/`、`model/`、`evaluation/` 顶层目录，
+`人群.jpg`、`人脸.png`，`.claude/settings.local.json` 等 **15** 个本地已不存在的文件；内容含 VTS Bridge 的
+PyQt5 UI、换用 mediapipe、3DDFA_V2 等**旧线**工作）。目录重组（阶段 2A）只发生在本地这条线上，GitHub 那条线没跟上。
+
+### 候选方案
+
+| 方案 | 取舍 |
+|:---|:---|
+| A 合并 GitHub 旧线到本地 `main` | ❌ 否决：会把 15 个旧路径文件带回**已重组**的目录结构，还带回 `.claude/settings.local.json`（现按 `.gitignore` 不发布）→ 是倒退 |
+| B 把本地 `main` 推到 GitHub 新分支（不动旧 `main`） | ⚠️ 零破坏，但 GitHub **默认分支仍是旧代码**，两线继续并存，分歧只是被推迟 |
+| **C（已选，已执行）** | 先把 GitHub 旧 tip 备份为 **`legacy-2026-06`** 分支，再 `--force-with-lease` 用本地 `main` 覆盖 GitHub `main` | ✅ 旧提交零丢失 + 主线收敛成一条；代价是 GitHub 上 `main` 的历史被改写（`-f` 类操作，已由使用者明确选择） |
+| D 不处理 GitHub | 保留分歧，远端长期不一致 |
+
+### 结果
+
+- `github/legacy-2026-06 = 32f7433`（旧线，2026-06-27）；`github/main = origin/main = main = 3af1a41`（校验：强推后重新 `fetch` 比对，三处 SHA 一致）。
+- 备份分支先建、强推后做，顺序不可颠倒（先备份才有回退点）。
+- 首次强推遇 **`HTTP 408`**（对象数 **406**，属小传输 → 判为连通性问题、不是体积问题）；
+  加 `-c http.postBuffer=157286400 -c http.lowSpeedLimit=0 -c http.lowSpeedTime=999999` 后一次成功。
+  另见 [`.dsh-dev/conventions.md`](conventions.md) 环境一节：`.git/config` 里的本地代理当时**并未监听**，直连受限 shell 又会被 schannel 拦下。
+
+### 残留
+
+- GitHub 旧线的 11 个提交**只做备份、未评估回迁价值**（PyQt5 UI 按既有决策不进产品；其余未逐条比对）。
+- 若日后发现旧线里确有值得保留的实现，回迁来源是 `legacy-2026-06`。
+- `fastgit` 远端域名已停服（`hub.fastgit.xyz`），**未清理**。
+
+---
+
 ## 2026-09-22 三个 OpenCV 分发包共用 `cv2/`：**处置已完成，问题未根治**（含根治路径，未做）
 
 ### 背景

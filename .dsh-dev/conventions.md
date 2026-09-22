@@ -80,6 +80,16 @@ tests/        测试
   先用同一工具看一个已知为真的对象）。空结果**不是**否定证据。见 `mistakes.md` 失误 4 与 5。
 - **涉及摄像头（或其它本机设备）的命令必须由使用者本人执行**：受限 shell 取不到摄像头设备，
   在那里判断"设备坏没坏"只会得到错误结论。
+- **远端与推送（2026-09-22 实测）**：远端有四个 —— `origin` = gitee（**唯一有跟踪分支的**）、
+  `github` / `github-ssh` = GitHub、`fastgit`（域名 `hub.fastgit.xyz` **已停服，勿用**）。
+  推送实测有**两个坑**：① `.git/config` 里配了代理 `http://127.0.0.1:7897`，但**当时该代理并未监听**
+  （`netstat` 查不到 7897；同一工具对已知为真的 445 端口查得到，故该否定结论有效），走代理会
+  `Failed to connect to ... via 127.0.0.1`；② 直连时受限 shell 被 schannel 拦下
+  （`schannel: AcquireCredentialsHandle failed: SEC_E_NO_CREDENTIALS`），**提权后同一条命令即可成功**。
+  可用写法：`git -c http.proxy= -c https.proxy= push <remote> <branch>`；
+  GitHub 直连不稳时再加 `-c http.postBuffer=157286400 -c http.lowSpeedLimit=0 -c http.lowSpeedTime=999999`
+  （首次 `HTTP 408` 用这组参数重试一次成功）。**改用 `http.sslBackend=openssl` 不可行**
+  （git 会拉起 `sh.exe`，受限 shell 下报 `couldn't create signal pipe, Win32 error 5`）。
 
 ## 指标与口径
 
