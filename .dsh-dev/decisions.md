@@ -4,6 +4,46 @@
 
 ---
 
+## 2026-09-22 三个 OpenCV 分发包共用 `cv2/`：**处置已完成，问题未根治**（含根治路径，未做）
+
+### 背景
+
+`opencv-python` / `opencv-python-headless` / `opencv-contrib-python` 是三个**不同发行包**，
+却都往同一个 `site-packages/cv2/` 装文件 → **最后安装者生效**。实测三者分别由
+**ultralytics**（`opencv-python>=4.6.0`）、**mediapipe**（`opencv-contrib-python`）、
+**albumentations**（`opencv-python-headless>=4.9.0.80`）拖入 —— **没有一个是为"用 OpenCV"单独装的**。
+记录状态原文是"**隐患，尚未爆**"；处置（声明收敛 + 护栏测试）此前已完成，但被标成了 ✅ —— 
+该标记与理由口径已于 2026-09-22 订正（见 [`mistakes.md` 失误 9](mistakes.md)）。
+
+### 关键新事实（2026-09-22 复核，全部实测）
+
+| 事实 | 证据 |
+|:---|:---|
+| 冲突结构**无法用声明消除** | 依赖解析只看"包名 + 版本"，**不判断目录归属**；三方从元数据看都满足，`pip check` 无异常 |
+| 元数据与实物不符 | `pip show opencv-python` 报 **4.13.0.92**，`cv2.__version__` 报 **5.0.0** |
+| 当前生效的是 **contrib** 构建 | `cv2.face` / `ximgproc` / `aruco` 存在；五个 GUI 符号（`imshow` / `waitKey` / `destroyAllWindows` / `getWindowProperty` / `WND_PROP_VISIBLE`）实测全部存在 |
+| 护栏**当前为绿** | `tests/test_opencv_environment.py` **3 个用例全过**（含 2 个反向用例：构造无 GUI / 部分缺失的假构建，验证它真能红） |
+
+### 候选方案
+
+| 方案 | 内容 | 取舍 |
+|:---|:---|:---|
+| A | **重装 contrib**，让它成为最后安装者 | ❌ 否决：**收益为零**（不改变"三个包都装着、顺序决定生效者"的结构）+ **风险非零**（顺序不受控；受限 shell 的 pip 会再生成一份用户目录副本 = 第四份） |
+| B | 用依赖约束 / 锁文件把三个包收敛 | ⚠️ 受限：albumentations **硬依赖 headless**，除非换库或不装它 |
+| **C（已落地）** | 声明只留必需的一个（contrib）+ 根因注释 + **护栏测试**（缺 GUI 符号即失败、不 skip） | 仍是**缓解**：让冲突**可见**，不消除冲突 |
+| **D（根治，未做）** | 把只用于**可视化 + 一次已否决实验**的第三方增强库从**运行环境**拆出 | 最干净的一条 —— 它本就不参与产品运行；代价是会影响那次实验的可复现性 |
+
+### 结果与残留
+
+- **已完成**：`requirements.txt` 声明收敛 + 根因注释；`tests/test_opencv_environment.py`（3 用例，含反向用例）；
+  三处"重装会把它变成未验证"的理由口径订正（`CHANGELOG.md`、`docs/皮套联调问题与解决.md` 1.1、`docs/AI协作复盘.md` 8.1）。
+- ⚠️ **未根治**：headless 一旦成为最后安装者，上述五个符号消失 → 实时预览崩，
+  且**报错指向 `cv2.imshow`、不提安装顺序**（排查方向被带向代码）。**D 方案未做。**
+- **口径**：材料里引用 OpenCV 版本时，必须写"**实际生效的构建**"（contrib，`cv2.__version__` 5.0.0），
+  不得照抄 `pip show opencv-python` 的 4.13.0.92。
+
+---
+
 ## 2026-09-16 第 5 条稳定性判据：**先实测 `connectedPlugins` 语义，再把采样器入库**
 
 ### 背景
